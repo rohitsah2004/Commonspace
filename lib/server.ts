@@ -1,0 +1,16 @@
+import {env} from 'cloudflare:workers';
+import {getChatGPTUser} from '../app/chatgpt-auth';
+export const SITE='https://commonplace-rohit-notes.rohitreturns00.chatgpt.site';
+export function database(){if(!env.DB)throw Error('Database unavailable');return env.DB}
+export async function isOwner(){const user=await getChatGPTUser();if(!user)return false;const db=database();let record=await db.prepare("SELECT user_id FROM owners WHERE key='owner'").first<{user_id:string}>();if(record)return record.user_id===user.userId;const email=(env as any).OWNER_EMAIL;if(!email||email.toLowerCase()!==user.email.toLowerCase())return false;await db.prepare("INSERT OR IGNORE INTO owners (key,user_id) VALUES ('owner',?)").bind(user.userId).run();record=await db.prepare("SELECT user_id FROM owners WHERE key='owner'").first<{user_id:string}>();return record?.user_id===user.userId}
+export function json(value:unknown,status=200){return Response.json(value,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}})}
+export async function authorizeWrite(request:Request){if(request.headers.get('origin')!==new URL(request.url).origin)return json({error:'This request must come from your writing workspace.'},403);if(!await isOwner())return json({error:'Only the site owner can edit posts.'},403);return null}
+export async function findPublic(slug:string){return (await publicRows()).find((r:any)=>r.slug===slug)||null}
+export function publicPost(row:any){return {id:row.id,slug:row.slug,content:JSON.parse(row.published),publishedAt:row.published_at}}
+export const effectiveSQL=`SELECT *,CASE WHEN scheduled_at IS NOT NULL AND scheduled_at<=? THEN scheduled ELSE published END AS visible_content,CASE WHEN scheduled_at IS NOT NULL AND scheduled_at<=? THEN scheduled_at ELSE published_at END AS visible_at FROM posts WHERE deleted_at IS NULL`;
+export async function publicRows(){const now=Date.now();const rows=await database().prepare(`SELECT * FROM (${effectiveSQL}) WHERE visible_content IS NOT NULL ORDER BY visible_at DESC`).bind(now,now).all();return rows.results.map((r:any)=>({...r,published:r.visible_content,published_at:r.visible_at}))}
+export function studioPost(r:any){const due=r.scheduled_at&&r.scheduled_at<=Date.now();return {...r,draft:JSON.parse(r.draft),published:due?JSON.parse(r.scheduled):r.published?JSON.parse(r.published):null,scheduled:!due&&r.scheduled?JSON.parse(r.scheduled):null,scheduled_at:due?null:r.scheduled_at}}
+export const defaultProfile={name:'Rohit',bio:'Ideas, observations, and discoveries worth sharing.',photo:'',linkedin:'',website:''};
+export async function getProfile(){const r=await database().prepare("SELECT value FROM settings WHERE key='profile'").first<any>();return r?{...defaultProfile,...JSON.parse(r.value)}:defaultProfile}
+export async function getCollections(){return (await database().prepare('SELECT * FROM collections ORDER BY name').all()).results as any[]}
+export async function snapshot(db:D1Database,id:string,version:number){return db.prepare('INSERT INTO revisions (id,post_id,content,version,created_at) SELECT ?,id,draft,version,? FROM posts WHERE id=? AND version=?').bind(crypto.randomUUID(),Date.now(),id,version)}

@@ -1,0 +1,6 @@
+import {database,isOwner,json,authorizeWrite,publicPost,publicRows,studioPost} from '../../../lib/server';
+import {validateContent} from '../../../lib/content';
+export const dynamic='force-dynamic';
+export async function GET(request:Request){const studio=new URL(request.url).searchParams.get('studio')==='1';if(studio&&!await isOwner())return json({error:'Owner access required.'},403);if(!studio)return json({posts:(await publicRows()).map(publicPost)});const rows=await database().prepare('SELECT * FROM posts ORDER BY updated_at DESC').all();return json({posts:rows.results.map(studioPost)})}
+
+export async function POST(request:Request){const denied=await authorizeWrite(request);if(denied)return denied;try{if(Number(request.headers.get('content-length'))>700000)return json({error:'Post too large.'},413);const content=validateContent(await request.json());const id=crypto.randomUUID();const base=content.title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,80)||'post';const slug=base+'-'+id.slice(0,8);const now=Date.now();await database().prepare('INSERT INTO posts (id,slug,draft,version,created_at,updated_at) VALUES (?,?,?,1,?,?)').bind(id,slug,JSON.stringify(content),now,now).run();return json({id,slug,version:1},201)}catch(e){return json({error:e instanceof Error?e.message:'Could not create draft.'},400)}}

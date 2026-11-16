@@ -1,0 +1,2 @@
+import {Shell} from '../ui';import {SubscriptionAction} from '../extras';export const dynamic='force-dynamic';export const metadata={title:'Email subscription',robots:{index:false,follow:false}};
+export default async function Page({searchParams}:{searchParams:Promise<{token?:string,unsubscribe?:string}>}){const p=await searchParams;return <Shell><div className="content"><SubscriptionAction token={p.token||''} unsubscribe={p.unsubscribe==='1'}/></div></Shell>}

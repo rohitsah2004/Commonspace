@@ -1,0 +1,1 @@
+import {SITE,publicRows} from '../lib/server';export default async function sitemap(){return [{url:SITE,lastModified:new Date()},...['about','collections'].map(p=>({url:SITE+'/'+p,lastModified:new Date()})),...(await publicRows()).map((r:any)=>({url:SITE+'/post/'+r.slug,lastModified:new Date(r.updated_at)}))]}

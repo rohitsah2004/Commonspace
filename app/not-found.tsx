@@ -1,0 +1,1 @@
+import {Shell} from './ui';export default function NotFound(){return <Shell><div className="content"><div className="empty"><h1>This page turned over.</h1><p>The story may have moved or is no longer published.</p><a className="primary" href="/">Back to all stories</a></div></div></Shell>}

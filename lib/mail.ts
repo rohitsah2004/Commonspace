@@ -1,0 +1,4 @@
+import {env} from 'cloudflare:workers';
+export function emailReady(){return !!((env as any).RESEND_API_KEY&&(env as any).NEWSLETTER_FROM)}
+export async function mail(to:string,subject:string,text:string,idempotency:string){if(!emailReady())throw Error('Email delivery is not connected yet.');const response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:'Bearer '+(env as any).RESEND_API_KEY,'Content-Type':'application/json','Idempotency-Key':idempotency},body:JSON.stringify({from:(env as any).NEWSLETTER_FROM,to:[to],subject,text})});if(!response.ok)throw Error('Email delivery failed. Check the email service configuration.');return response.json()}
+export async function hash(value:string){return [...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)))].map(n=>n.toString(16).padStart(2,'0')).join('')}

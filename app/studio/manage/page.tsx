@@ -1,0 +1,2 @@
+import {requireChatGPTUser} from '../../chatgpt-auth';import {isOwner} from '../../../lib/server';import {notFound} from 'next/navigation';import Manage from './tools';export const dynamic='force-dynamic';export const metadata={title:'Publication tools',robots:{index:false,follow:false}};
+export default async function Page(){await requireChatGPTUser('/studio/manage');if(!await isOwner())notFound();return <Manage/>}

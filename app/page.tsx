@@ -1,0 +1,2 @@
+import Home from './home';import {publicRows,isOwner,publicPost} from '../lib/server';
+export const dynamic='force-dynamic';export default async function Page(){return <Home posts={(await publicRows()).map(publicPost)} owner={await isOwner()}/>}
