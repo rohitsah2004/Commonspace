@@ -100,3 +100,11 @@ Existing migrations and generated scripts/vendor/UI source remain untouched.
 - Checks: all four required commands passed after rerunning integration without concurrent rate-threshold requests. Local assertions verified 429/Retry-After, report-only/security headers and removal of Google font links; JPEG unit checks passed. Local browser preview loaded successfully.
 - Files: proxy.ts, lib/rate-limit.ts/jpeg.ts, generated drizzle/0003_melted_lockheed.sql and schema, fonts/license, subscription/upload hooks, SECURITY.md and environment declarations.
 - Follow-ups: RATE_LIMIT_SALT (>=32 random characters) is required; missing configuration fails closed. HSTS is left to the HTTPS hosting edge until its existing policy is verified. Sites cross-origin iframe verification requires a staging deployment, prohibited in this task; CSP remains report-only. SECURITY.md gives enforcement steps. Explicit owner-authored HTTPS images can still contact their specified hosts; no new third-party public-page requests were added.
+
+## Phase 12 — Markdown portability, dates and theme
+
+- Added bounded Markdown/frontmatter parsing, safe inline formatting, lists, quotes, tables, mapped fenced languages and uploaded/HTTPS images. Imports pass the unchanged strict content validator; unsupported formatting stays text. Studio paste/file import and per-draft .md download are available; owner ZIP backups include draft Markdown alongside original JSON/assets.
+- Extracted safeURL verbatim to a dependency-free module (content re-exports it) so Markdown serialization can be tested independently. Added exact theme-bootstrap CSP hash, pre-paint root/body synchronization and neutral UTC article/editor/manage dates.
+- Checks: all four required commands passed; Markdown formatting/frontmatter/table/code round-trip and invalid URL/size tests passed. Browser verified dark mode persists on reload with both html/body classes synchronized.
+- Files: lib/markdown-parser.ts, markdown-import.ts, url.ts, theme.ts; MarkdownTools, surgical studio/export/layout/date/theme/proxy edits and unit tests.
+- Follow-ups: the simple Markdown subset deliberately degrades unsupported/nested syntax to readable text. The theme script is hashed; framework inline scripts still need a supported nonce/hash strategy before CSP enforcement. UTC was chosen instead of adding a timezone setting.

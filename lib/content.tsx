@@ -1,3 +1,4 @@
+import {safeURL} from './url';
 import {DOCUMENT_TAGS} from './document-schema';
 import {CODE_LANGUAGES} from './highlight';import {DocumentBody} from '../app/components/document-body';
 import type { ContentMetadata } from './types';import { validateMetadata } from './content-metadata';
@@ -6,7 +7,8 @@ export type DocNode={tag?:string;text?:string,href?:string,src?:string,alt?:stri
 export type Content=ContentMetadata & {title:string,subtitle:string,cover:string,tags:string[],body:DocNode[],series?:string,position?:number,attachments?:{id:string,name:string,url:string,size:number,type:string}[]};
 const tags=DOCUMENT_TAGS;
 export const blank=():Content=>({title:'',subtitle:'',cover:'',tags:[],body:[],type:'post',difficulty:''});
-export function safeURL(value:string,image=false){if(!value)return '';if(image&&/^\/media\/[a-zA-Z0-9.-]+$/.test(value))return value;try{const u=new URL(value);return ['https:',...(image?[]:['http:'])].includes(u.protocol)?u.href:''}catch{return ''}}
+export {safeURL} from './url';
+
 export function validateContent(value:any):Content{
  if(!value||typeof value.title!=='string'||!value.title.trim()||value.title.length>200)throw Error('Add a title of up to 200 characters.');
  if(typeof value.subtitle!=='string'||value.subtitle.length>500||typeof value.cover!=='string'||value.cover.length>2048)throw Error('The subtitle or cover link is too long.');

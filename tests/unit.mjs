@@ -58,3 +58,19 @@ const jpeg = new Uint8Array([255,216,255,225,0,8,69,120,105,102,0,0,255,224,0,4,
 assert.deepEqual([...stripJPEGMetadata(jpeg)], [255,216,255,224,0,4,1,2,255,218,0,2,1,2,255,217]);
 assert.throws(() => stripJPEGMetadata(new Uint8Array([255,216,255,225,255,255])));
 console.log('PASS: JPEG APP1/EXIF stripping preserves other segments and rejects malformed lengths.');
+
+const { parseMarkdown } = await pureModule('../lib/markdown-parser.ts');
+const { contentToMarkdown } = await pureModule('../lib/markdown.ts');
+const md = '---\ntitle: "Markdown fixture"\ntags: ["Cloud Security", "Safe"]\ntype: "note"\ndifficulty: "beginner"\n---\n\n## Heading\n\n**Bold** and *emphasis* and `code` [link](https://example.org).\n\n```ps1\n$value = 42\n```\n\n> Quoted\n\n1. First\n2. Second\n\n| Name | Value |\n| --- | --- |\n| A | B |\n\n![local](/media/example.png)';
+const parsed = parseMarkdown(md);
+assert.equal(parsed.metadata.title, 'Markdown fixture');
+assert.deepEqual(parsed.metadata.tags, ['Cloud Security', 'Safe']);
+assert(parsed.body.some(n => n.tag === 'pre' && n.language === 'powershell'));
+assert(parsed.body.some(n => n.tag === 'table'));
+const round = parseMarkdown(contentToMarkdown({ ...parsed.metadata, cover:'', body: parsed.body }));
+assert.deepEqual(round.metadata, { ...parsed.metadata, subtitle:'', series:'', position:0 });
+assert.deepEqual(round.body, parsed.body);
+assert.equal(parseMarkdown('# A title\n\n<script>never HTML</script>').title, 'A title');
+assert.throws(() => parseMarkdown('x'.repeat(300 * 1024 + 1)));
+assert.equal(JSON.stringify(parseMarkdown('[bad](javascript:alert) ![bad](http://example.org/image)')).includes('"href"'), false);
+console.log('PASS: Markdown frontmatter, safe formatting, code languages, tables, round-trip and size cap.');

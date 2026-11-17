@@ -13,3 +13,5 @@ nav a{display:flex;align-items:center;gap:8px;padding:12px;border-radius:8px;mar
 .distribution{padding:16px;border:1px solid var(--line);border-radius:8px;margin-top:24px;background:var(--bg)}.distribution p,.distributionnote{font-size:12px;line-height:20px;color:var(--muted)}.distribution small{overflow-wrap:anywhere}.distribution .chips{margin:0 0 12px}.distribution>span{font-size:12px;color:var(--green)}
 
 .honeypot{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden;clip-path:inset(50%);opacity:0;pointer-events:none}
+
+html.dark{color-scheme:dark;--bg:#181818;--side:#1f1f1f;--surface:#272727;--ink:#e8ece7;--muted:#a0aaa3;--line:#313131;--green:#8cc6a6;--soft:#313131;--hover:#313131;--shadow:0 16px 48px #0004}

@@ -1,5 +1,5 @@
 import type { Content, DocNode } from './content';
-import { safeURL } from './content';
+import { safeURL } from './url';
 import { nodeText } from './headings';
 
 const escapeText = (text: string) => text.replace(/([\\`*_\[\]<>])/g, '\\$1');
@@ -40,5 +40,10 @@ export function nodesToMarkdown(nodes: DocNode[]): string {
 }
 
 export function contentToMarkdown(content: Content): string {
-  return '# ' + content.title + '\n\n' + (content.subtitle ? content.subtitle + '\n\n' : '') + nodesToMarkdown(content.body);
+  const fields = { title: content.title, subtitle: content.subtitle, tags: content.tags, type: content.type || 'post',
+    difficulty: content.difficulty || '', series: content.series || '', position: content.position || 0,
+    ...(content.type === 'resource' ? { resourceUrl: content.resourceUrl, resourceKind: content.resourceKind, takeaway: content.takeaway } : {}),
+    ...(content.reviewedAt ? { reviewedAt: content.reviewedAt } : {}) };
+  return '---\n' + Object.entries(fields).map(([key, value]) => key + ': ' + JSON.stringify(value ?? '')).join('\n')
+    + '\n---\n\n' + nodesToMarkdown(content.body);
 }
