@@ -74,3 +74,22 @@ assert.equal(parseMarkdown('# A title\n\n<script>never HTML</script>').title, 'A
 assert.throws(() => parseMarkdown('x'.repeat(300 * 1024 + 1)));
 assert.equal(JSON.stringify(parseMarkdown('[bad](javascript:alert) ![bad](http://example.org/image)')).includes('"href"'), false);
 console.log('PASS: Markdown frontmatter, safe formatting, code languages, tables, round-trip and size cap.');
+
+const { publicAddress, resourceURL, checkHTTPS } = await pureModule('../lib/safe-link-check.ts');
+for (const ip of ['127.0.0.1','10.1.1.1','169.254.169.254','172.16.0.1','192.168.1.1','100.64.0.1','0.0.0.0','::1','fe80::1','fc00::1','::ffff:127.0.0.1','2001:db8::1']) assert(!publicAddress(ip), ip);
+assert(publicAddress('93.184.216.34')); assert(publicAddress('2606:4700:4700::1111'));
+for (const value of ['http://example.org','https://localhost/','https://127.0.0.1','https://0x7f000001','https://[::1]','https://example.org:8443','https://user:pass@example.org']) assert.throws(() => resourceURL(value));
+let outbound = 0;
+const mock = async (url, options) => {
+  if (String(url).startsWith('https://cloudflare-dns.com/')) return Response.json({Status:0,Answer:[{type:1,data:'93.184.216.34'}]});
+  outbound++; assert.equal(options.method,'HEAD'); assert.equal(options.redirect,'manual');
+  return new Response(null,{status:302,headers:{location:'https://localhost/private'}});
+};
+assert.equal((await checkHTTPS('https://example.org', mock)).status,'broken'); assert.equal(outbound,1);
+let redirects = 0;
+const redirectMock = async (url) => String(url).startsWith('https://cloudflare-dns.com/')
+  ? Response.json({Status:0,Answer:[{type:1,data:'93.184.216.34'}]}) : (redirects++, new Response(null,{status:302,headers:{location:'/next'}}));
+assert.equal((await checkHTTPS('https://example.org', redirectMock)).status,'broken'); assert.equal(redirects,4);
+const privateDNS = async () => Response.json({Status:0,Answer:[{type:1,data:'10.0.0.1'}]});
+assert.equal((await checkHTTPS('https://example.org', privateDNS)).status,'broken');
+console.log('PASS: link-check private DNS/IP/credential/port guards and redirect cap with mocked networking only.');

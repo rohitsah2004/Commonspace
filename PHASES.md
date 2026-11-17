@@ -108,3 +108,11 @@ Existing migrations and generated scripts/vendor/UI source remain untouched.
 - Checks: all four required commands passed; Markdown formatting/frontmatter/table/code round-trip and invalid URL/size tests passed. Browser verified dark mode persists on reload with both html/body classes synchronized.
 - Files: lib/markdown-parser.ts, markdown-import.ts, url.ts, theme.ts; MarkdownTools, surgical studio/export/layout/date/theme/proxy edits and unit tests.
 - Follow-ups: the simple Markdown subset deliberately degrades unsupported/nested syntax to readable text. The theme script is hashed; framework inline scripts still need a supported nonce/hash strategy before CSP enforcement. UTC was chosen instead of adding a timezone setting.
+
+## Phase 13 — explicit digest and resource maintenance
+
+- Added owner/same-origin digest batches with frozen message content, confirmed subscribers only, provider idempotency keys, unsubscribe tokens and the existing delivery ledger. Last-digest time advances only when the batch finishes; retries resume the active digest.
+- Added owner-only resource health listing/check action and broken-link badges in manage. Checks rotate oldest-first, max 20/run, HEAD only, HTTPS/443, no credentials/IP literals/local hosts, DNS A/AAAA private/reserved guards, three redirects, five-second deadline per URL, no stored bodies.
+- Checks: all four required commands passed. Mock-network tests cover unsafe destinations/private DNS and redirect limits. No actual digest or external resource request was sent during tests.
+- Files: lib/digest.ts, resource-check.ts, safe-link-check.ts; /api/digest and /api/resources/check; MaintenanceTools and surgical manage integration; SECURITY.md.
+- Follow-ups: real delivery needs Resend secrets and verified sender. Workers cannot pin fetch to the preflight DNS address; rebinding defense also depends on platform outbound isolation. This limitation and safe-porting requirement are explicit in SECURITY.md.

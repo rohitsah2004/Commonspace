@@ -13,3 +13,5 @@ Security headers are set by Vinext proxy middleware. CSP is report-only to prese
 Report issues privately using the configured `/.well-known/security.txt` contact. Until a contact is configured, that route returns 404; do not publish sensitive reports in public GitHub issues.
 
 No production data or live external delivery is used by the loopback test suite.
+
+The owner-only resource checker uses HEAD, HTTPS/443 only, no credentials, a shared 5-second deadline per URL, up to three redirects, and 20 URLs per explicit run. Each hop is checked with trusted DNS-over-HTTPS for both address families and fails closed for private/reserved answers. Only status/code/time are stored. Worker fetch does its own DNS lookup: application code cannot pin the resolved socket, so DNS rebinding protection also depends on the hosting platform's outbound network isolation. Keep that isolation enabled; do not port this checker to an unrestricted server without address-pinned transport. External DNS/HEAD requests occur only on the owner's explicit check action.
