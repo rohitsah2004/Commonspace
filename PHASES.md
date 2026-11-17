@@ -66,3 +66,12 @@ Existing migrations and generated scripts/vendor/UI source remain untouched.
 - Checks: all four required commands passed. Disposable local tests also verified stale reorder rejection, revision creation, metadata edits, collection deletion without broken posts, and live/private body isolation.
 - Files: lib/collection-metadata.ts, manage-collections.ts, app/components/collection-manager.tsx, surgical manage API/UI/server collection/sitemap/page changes.
 - Follow-up: deleting a collection clears its featured setting but deliberately leaves post content intact.
+
+## Phase 8 — security knowledge homepage
+
+- Replaced the dense homepage implementation with a small re-export to a normally formatted hub component.
+- Added settings-driven hero and section copy, optional featured learning path, four-item type rows, top tags, newsletter/RSS, and a 20-item paginated browse grid retaining grid/list mode and debounced search.
+- Server assembles lightweight cards only; rows reuse one parsed public dataset. Resources never load remote favicons/images. Existing explicitly saved copy is preserved; fresh default settings now suit security knowledge.
+- Checks: typecheck, lint, build and the full loopback integration suite passed, including the full-body-payload sentinel assertion.
+- Files: lib/hub-copy.ts, site-settings.ts; app/components/hub-home.tsx and settings form; surgical app/page.tsx/home shim and CSS.
+- Follow-up: public HTML still intentionally varies with owner status until the next caching-safety phase.

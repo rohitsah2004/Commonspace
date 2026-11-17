@@ -28,6 +28,7 @@ export default function SiteSettingsForm({ initial, collections }: { initial: Si
       <option value="">No featured collection</option>
       {collections.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
     </select></label>
+    <details><summary>Homepage section copy</summary>{(Object.keys(settings.hub) as (keyof SiteSettings['hub'])[]).map(key => <label key={key}>{key}<input maxLength={500} value={settings.hub[key]} onChange={e => setSettings({ ...settings, hub: { ...settings.hub, [key]: e.target.value } })}/></label>)}</details>
     <div className="dialogfoot"><span role="status">{message}</span><button className="primary" disabled={busy}>Save site settings</button></div>
   </form>;
 }

@@ -1,3 +1,4 @@
+import {defaultHubCopy,validateHubCopy,type HubCopy} from './hub-copy';
 export type SiteSettings = {
   title: string;
   tagline: string;
@@ -5,26 +6,28 @@ export type SiteSettings = {
   heroText: string;
   featuredCollection: string;
   securityContact: string;
+  hub: HubCopy;
 };
 
 export const defaultSiteSettings: SiteSettings = {
   title: 'Commonplace',
-  tagline: 'A LITTLE SPACE FOR BIG IDEAS',
-  heroTitle: 'A home for your curiosity',
-  heroText: 'Notes, essays, and discoveries. Written by Rohit, shared with you.',
+  tagline: 'LEARN IT. KEEP IT. USE IT.',
+  heroTitle: 'Practical security knowledge, within reach',
+  heroText: 'Cheat sheets, field notes, and resources to put security knowledge to work.',
   featuredCollection: '',
   securityContact: '',
+  hub: defaultHubCopy,
 };
 
 export function validateSiteSettings(input: unknown): SiteSettings {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw Error('Invalid site settings.');
   const value = input as Record<string, unknown>;
-  const limits: Record<keyof SiteSettings, number> = {
+  const limits: Record<Exclude<keyof SiteSettings,'hub'>, number> = {
     title: 80, tagline: 160, heroTitle: 160, heroText: 500,
     featuredCollection: 100, securityContact: 2048,
   };
   const result = { ...defaultSiteSettings };
-  for (const key of Object.keys(limits) as (keyof SiteSettings)[]) {
+  for (const key of Object.keys(limits) as (Exclude<keyof SiteSettings,'hub'>)[]) {
     if (value[key] === undefined) continue;
     if (typeof value[key] !== 'string' || (value[key] as string).length > limits[key]) {
       throw Error(`Invalid ${key}.`);
@@ -41,5 +44,6 @@ export function validateSiteSettings(input: unknown): SiteSettings {
     try { const u = new URL(result.securityContact); web = u.protocol === 'https:' && !u.username && !u.password; } catch { /* email */ }
     if (!email && !web) throw Error('Security contact must be an email address or HTTPS URL.');
   }
+  result.hub = validateHubCopy(value.hub);
   return result;
 }
