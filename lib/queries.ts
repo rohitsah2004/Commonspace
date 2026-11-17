@@ -32,7 +32,7 @@ export function toCard(item: PublicItem | PublicRow): Card {
     cover: c.type === 'resource' ? undefined : c.cover, excerpt: plainText(c.body).replace(/\s+/g, ' ').trim().slice(0, 200), tags: c.tags,
     difficulty: c.difficulty ?? '', resourceUrl: c.resourceUrl, resourceKind: c.resourceKind,
     takeaway: c.takeaway, reviewedAt: c.reviewedAt, publishedAt: row.published_at,
-    updatedAt: row.updated_at, readingTime: readingTime(c), series: c.series, position: c.position,
+    updatedAt: c.snapshotUpdatedAt ?? row.published_at, readingTime: readingTime(c), series: c.series, position: c.position,
   };
 }
 

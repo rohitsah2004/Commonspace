@@ -1,9 +1,10 @@
+import {DOCUMENT_TAGS} from './document-schema';
 import {CODE_LANGUAGES} from './highlight';import {DocumentBody} from '../app/components/document-body';
 import type { ContentMetadata } from './types';import { validateMetadata } from './content-metadata';
 import React from 'react';
 export type DocNode={tag?:string;text?:string,href?:string,src?:string,alt?:string,language?:string,children?:DocNode[]};
 export type Content=ContentMetadata & {title:string,subtitle:string,cover:string,tags:string[],body:DocNode[],series?:string,position?:number,attachments?:{id:string,name:string,url:string,size:number,type:string}[]};
-const tags=new Set(['p','div','h2','h3','strong','b','em','i','u','blockquote','pre','code','ul','ol','li','a','img','br','figure','figcaption','table','thead','tbody','tr','th','td']);
+const tags=DOCUMENT_TAGS;
 export const blank=():Content=>({title:'',subtitle:'',cover:'',tags:[],body:[],type:'post',difficulty:''});
 export function safeURL(value:string,image=false){if(!value)return '';if(image&&/^\/media\/[a-zA-Z0-9.-]+$/.test(value))return value;try{const u=new URL(value);return ['https:',...(image?[]:['http:'])].includes(u.protocol)?u.href:''}catch{return ''}}
 export function validateContent(value:any):Content{

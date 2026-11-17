@@ -3,11 +3,11 @@
 // serve stale HTML for up to 300 additional seconds while revalidating: this is not
 // a hard 60-second publication deadline. Use no-store if exact-time freshness is required.
 export const PUBLIC_CACHE = 'public, s-maxage=60, stale-while-revalidate=300';
-export const PUBLIC_PATHS = ['/', '/about', '/posts', '/notes', '/cheatsheets', '/resources', '/tags', '/tags/:tag', '/post/:slug', '/collections', '/collections/:slug', '/feed.xml', '/sitemap.xml'];
+export const PUBLIC_PATHS = ['/', '/about', '/posts', '/notes', '/cheatsheets', '/resources', '/tags', '/tags/:tag', '/post/:slug', '/collections', '/collections/:slug', '/feed.xml', '/feed.json', '/sitemap.xml'];
 
 export function publicCacheableRequest(request: Request): boolean {
   if (!['GET', 'HEAD'].includes(request.method) || request.headers.has('rsc') || request.headers.has('next-router-prefetch')) return false;
   const path = new URL(request.url).pathname;
-  return ['/', '/about', '/posts', '/notes', '/cheatsheets', '/resources', '/tags', '/collections', '/feed.xml', '/sitemap.xml'].includes(path)
+  return ['/', '/about', '/posts', '/notes', '/cheatsheets', '/resources', '/tags', '/collections', '/feed.xml', '/feed.json', '/sitemap.xml'].includes(path)
     || /^\/(post|tags|collections)\/[^/]+$/.test(path);
 }

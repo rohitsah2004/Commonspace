@@ -18,6 +18,10 @@ export function validateMetadata(
     }
     metadata.reviewedAt = input.reviewedAt;
   }
+  if (input.snapshotUpdatedAt !== undefined) {
+    if (typeof input.snapshotUpdatedAt !== 'number' || !Number.isSafeInteger(input.snapshotUpdatedAt) || input.snapshotUpdatedAt < Date.UTC(2000, 0, 1) || input.snapshotUpdatedAt > Date.now() + 366 * 86400000) throw Error('Invalid snapshot timestamp.');
+    metadata.snapshotUpdatedAt = input.snapshotUpdatedAt;
+  }
   if (type === 'resource') {
     if (typeof input.resourceUrl !== 'string' || input.resourceUrl.length > 2048) {
       throw Error('Resources need an HTTPS URL.');

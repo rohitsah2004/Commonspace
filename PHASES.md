@@ -84,3 +84,11 @@ Existing migrations and generated scripts/vendor/UI source remain untouched.
 - Added feed ETag/304 and generated drizzle/0002_damp_puff_adder.sql. Local EXPLAIN changed from SCAN posts to SEARCH using posts_public_idx(deleted_at,published_at); the CASE sort still uses a temporary B-tree.
 - Checks: all four commands passed, plus explicit owner/anonymous/cache/private/ETag assertions. No deployment or production access.
 - Cache limitation: fresh TTL is 60 seconds; the requested SWR=300 can serve older HTML during revalidation. This is not a hard 60-second scheduled-publication SLA. Keep no-store when exact-time freshness is mandatory.
+
+## Phase 10 — feeds and distribution
+
+- Added escaped TechArticle/Article JSON-LD, snapshot modification timestamps, meaningful sitemap dates, safe full-body RSS HTML, feed filters, categories and JSON Feed 1.1 with ETags.
+- Added configurable security.txt (404 until a contact is set), canonical redirect, LinkedIn/canonical copy helpers, X sharing and Medium import guidance.
+- Checks: all four required commands passed; additional loopback assertions verified well-formed RSS, atom self link, JSON Feed/ETag, sitemap routes and unset-contact 404.
+- Files: lib/html.ts, feeds.ts, snapshot.ts, sitemap.ts, document-schema.ts; feed/security routes, article structured data and distribution components; surgical validation/editor/share changes.
+- Follow-up: old snapshots without an explicit modification timestamp use their known publication timestamp, never private draft update times. Configure securityContact before publishing security.txt.

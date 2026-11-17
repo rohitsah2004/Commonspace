@@ -14,6 +14,7 @@ export type ContentMetadata = {
   type?: ContentType;
   difficulty?: Difficulty | '';
   reviewedAt?: number;
+  snapshotUpdatedAt?: number;
   resourceUrl?: string;
   takeaway?: string;
   resourceKind?: ResourceKind;
