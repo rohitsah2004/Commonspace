@@ -38,3 +38,50 @@ Approximate first-party article views, deduplicated by a browser session/article
 ## Development and verification
 
 Use the Sites plugin lifecycle helpers for dependency installation, builds and publication. Generate schema migrations with `npm run db:generate`; append migrations after production deployment, never edit applied migrations. Run `npx tsc --noEmit` for type checks. `python3 tests/integration.py` tests the loopback development server only and creates disposable local records; it must never target production. It checks owner access, scheduled visibility, revision restore, attachments, ZIP integrity and file contents, analytics deduplication, trash restore and disconnected email behavior.
+
+## Security knowledge hub
+
+Content types are **Post**, **Note**, **Cheat sheet**, and **Resource**. Existing content defaults to Post. Add up to eight tags, optional difficulty, and a collection. Cheat sheets have reviewed dates, table of contents, copyable code, Markdown copy and print/PDF controls. Resources require an HTTPS URL and support kind/takeaway fields; their cards load no remote favicons or images.
+
+Browse `/posts`, `/notes`, `/cheatsheets`, `/resources`, `/tags`, and `/tags/:slug`. Type/tag pages have shareable query filters (`tag` repeated for multiple tags, `difficulty`, `sort`, `page`, and `q`). The homepage features a configurable learning path, newest items by type and paginated browsing. Search uses `/api/search` with title/tag/subtitle/body ranking, a two-character minimum, debounced cancellation and at most 30 lightweight results. Homepage/card payloads contain excerpts, never document bodies.
+
+`/saved` keeps up to 500 bookmarks **in this browser's localStorage only**, with JSON import/export and cross-tab sync. There is no account or cross-device sync. Unpublished/deleted items become unavailable on refresh. Collection completion is also browser-local. Blocked or corrupt browser storage produces a safe empty/error state.
+
+Feeds: `/feed.xml` remains RSS 2.0 with escaped full HTML, tag categories and ETags; `/feed.json` is JSON Feed 1.1. Both support `?type=cheatsheet` and repeated `tag` filters. Articles include safe JSON-LD; sitemap includes all knowledge and collection routes. Set the security contact under Site settings to enable `/.well-known/security.txt`; `/security.txt` redirects to its canonical URL.
+
+## Markdown / Obsidian workflow
+
+In the studio choose **Import Markdown**, paste text or choose a `.md` file (maximum 300 KB), review the replacement and save. Supported formatting includes h2/h3, bold/emphasis, inline/fenced code, quotes, lists, HTTP(S) links, uploaded/HTTPS images and tables. A top-level h1 supplies an empty title. Simple frontmatter accepts `title`, `subtitle`, `tags`, `type`, `difficulty`, `series`, `position`, and resource metadata. Imported documents pass the same strict content validator as normal saves. Unsupported syntax stays readable text; this is a deliberately bounded subset, not a complete CommonMark/YAML implementation.
+
+Use **Download .md** to move a draft into Obsidian or another editor. Full owner ZIP backups include `posts/<slug>.md` for every stored draft plus the original JSON and R2 assets. Uploaded media references remain `/media/...`; keep the associated assets when moving to another system. Export archives include private data and must stay private. Per-post Markdown is the current draft; the original JSON preserves all live/scheduled/revision snapshots.
+
+## Runtime configuration and security
+
+- `OWNER_EMAIL`: verified initial owner binding; subsequent checks use the pinned owner ID.
+- `SITE_URL`: canonical HTTPS origin, e.g. `https://blog.rohitsah.com`. If absent the existing Sites URL remains the fallback. Complete DNS/HTTPS verification first; see DOMAIN-SETUP.md.
+- `RATE_LIMIT_SALT`: required random server secret, at least 32 characters. Search/analytics/subscribe return 503 until configured. Counters store salted hashes, never raw IPs, and are cleaned after 24 hours. Limits: search 60/minute, analytics 120/minute, signup 5/10 minutes. Cloudflare must overwrite trusted CF-Connecting-IP at ingress.
+- `RESEND_API_KEY`, `NEWSLETTER_FROM`: optional email secrets and verified sender. Tests require these to be absent. Digests are explicit owner actions in the Subscribers tab; they group new publications since the last completed digest, send only to confirmed subscribers, and use resumable batches/idempotency/ledger records.
+- Site settings: brand/hero/section copy, featured collection and security contact. Dates use UTC.
+
+Resource checks are explicit owner actions in Subscribers, max 20 oldest-first per run. They use DNS/private-range checks, HTTPS HEAD, three redirects and five-second deadlines. Results are visible only in manage. Worker fetch cannot pin a resolved IP; preserve hosting outbound isolation against DNS rebinding, as described in SECURITY.md.
+
+Fonts are self-hosted. Proxy middleware adds nosniff, referrer/permissions policies, COOP and **report-only** CSP. The theme bootstrap has an exact SHA-256 hash. Framework inline scripts need supported hashes/nonces and Sites frame origins must be verified before enforcement. HSTS is left to the hosting edge until its existing policy is checked. See SECURITY.md for the precise enforcement checklist and threat boundaries.
+
+Public HTML excludes visitor identity; `/api/me` hydrates owner chrome separately. Public GET/HEAD pages use CDN fresh TTL 60 seconds and stale-while-revalidate 300 seconds. SWR can extend stale responses; this is not a hard 60-second scheduling guarantee. Owner/studio/preview responses remain uncached.
+
+## Phase verification and database changes
+
+PHASES.md records one commit per phase, changed modules, checks and limitations. Added generated migrations: `0002_damp_puff_adder.sql` (public-post index) and `0003_melted_lockheed.sql` (rate counters). Apply pending generated migrations through the normal hosting process before releasing this code. Existing migrations are unchanged. No deployment was performed for this upgrade.
+
+Run a loopback dev server at `127.0.0.1:5173` with a disposable local owner, D1/R2 and RATE_LIMIT_SALT, then run:
+
+```sh
+npx tsc --noEmit
+npm run lint
+npm run build
+python3 tests/integration.py
+```
+
+The suite verifies scheduled snapshots/revisions/trash, metadata, visibility, search ranking, local-storage helpers, collection CAS, feed/XML/JSON-LD safety, security headers/origin/owner guards, Markdown round-trip/ZIP and rate-limit 429. It uses local disposable records and mocked link networking; it never sends email or tests against production. Run the suite once at a time; the final threshold test intentionally exhausts the local search window. Wait for the next window before rerunning (or clear only disposable local rate counters). Legacy files still emit visible lint warnings; newly added modules retain strict linting.
+
+The step-by-step staging checklist for switching CSP to enforcement is in [CSP-ENFORCEMENT.md](CSP-ENFORCEMENT.md). It includes the Sites parent-origin check, framework nonce/hash coverage and required regression flows.

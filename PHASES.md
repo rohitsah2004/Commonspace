@@ -116,3 +116,12 @@ Existing migrations and generated scripts/vendor/UI source remain untouched.
 - Checks: all four required commands passed. Mock-network tests cover unsafe destinations/private DNS and redirect limits. No actual digest or external resource request was sent during tests.
 - Files: lib/digest.ts, resource-check.ts, safe-link-check.ts; /api/digest and /api/resources/check; MaintenanceTools and surgical manage integration; SECURITY.md.
 - Follow-ups: real delivery needs Resend secrets and verified sender. Workers cannot pin fetch to the preflight DNS address; rebinding defense also depends on platform outbound isolation. This limitation and safe-porting requirement are explicit in SECURITY.md.
+
+## Phase 14 — complete regression coverage and handoff
+
+- Extended loopback tests for owner/cross-origin rejection, identity-free cached HTML, headers, collection edits/reorder CAS/revisions/delete, published-only lookup/cap, escaped RSS/full HTML/categories/ETag, JSON Feed, JSON-LD closing-script safety, sitemap, security contact/redirect and Markdown ZIP drafts. Added isolated mocked-mail digest retry/ledger/confirmed-only tests; rate threshold runs last.
+- Final tests exposed Vinext's dot-directory exclusion. Fixed standard security.txt routing through its verified proxy rewrite to a normal API handler; tested configured contact and canonical redirect. Finished machine-readable UTC time labels in owner tools.
+- Updated README with all routes, content types, browser-local saving/progress, feeds/search, Markdown/Obsidian portability, runtime variables, rate thresholds, migrations and local-only verification. Added CSP-ENFORCEMENT.md with exact staging-to-enforcement steps.
+- Checks: npx tsc --noEmit, npm run lint, npm run build and python3 tests/integration.py all passed on the final source. Lint has 0 errors and 105 visible legacy warnings. git diff --check passed; no forbidden scripts/vendor/.openai/components/ui changes; no secrets or local runtime data tracked.
+- Files: tests/integration.py, hub.py, digest.mjs; README.md, CSP-ENFORCEMENT.md; security routing correction and shared DateTime with surgical owner UI edits.
+- Intentionally not executed: deployment, production tests, real email delivery, live resource probes, DNS changes, and enforced-CSP/Sites iframe verification. These need the owner's later authorized release/staging environment. Worker DNS pinning and SWR/print/Markdown subset limitations remain documented above and in SECURITY.md/README.md.

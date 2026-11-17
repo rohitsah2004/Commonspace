@@ -1,4 +1,5 @@
 'use client';
+import {DateTime} from './date-time';
 import { useEffect, useState } from 'react';
 import type { ResourceCheck } from '../../lib/resource-check';
 export function MaintenanceTools({ emailReady }: { emailReady: boolean }) {
@@ -25,7 +26,7 @@ export function MaintenanceTools({ emailReady }: { emailReady: boolean }) {
   return <section className="toolpanel"><h2>Digest and resource health</h2><p>Send a digest explicitly, or check up to 20 resource links. Nothing runs automatically.</p>
     <div className="chips"><button className="chip" disabled={busy || !emailReady} onClick={() => setConfirm(true)}>Send digest</button><button className="chip" disabled={busy} onClick={() => run('links')}>{busy ? 'Working…' : 'Check resource links'}</button></div>
     {!emailReady && <p>Connect Resend and a verified sender to enable digests.</p>}
-    <p role="status">{message}</p>{resources.map(item => <div className="metricrow" key={item.id}><div>{item.title}<small>{item.lastChecked ? 'Checked ' + new Date(item.lastChecked).toISOString() : 'Not checked yet'}</small></div><span className={'statusbadge ' + (item.status === 'broken' ? 'danger' : '')}>{item.status === 'broken' ? 'Broken link' : item.status || 'Unchecked'}</span></div>)}
+    <p role="status">{message}</p>{resources.map(item => <div className="metricrow" key={item.id}><div>{item.title}<small>{item.lastChecked ? <>Checked <DateTime value={item.lastChecked} detailed/></> : 'Not checked yet'}</small></div><span className={'statusbadge ' + (item.status === 'broken' ? 'danger' : '')}>{item.status === 'broken' ? 'Broken link' : item.status || 'Unchecked'}</span></div>)}
     {confirm && <div className="modalback"><section className="confirmbox" role="dialog" aria-modal="true" aria-label="Confirm digest"><h2>Send digest?</h2><p>Email newly published items since the last digest to confirmed subscribers. Existing unfinished delivery resumes safely.</p><div className="dialogfoot"><button onClick={() => setConfirm(false)}>Cancel</button><button className="primary" onClick={() => run('digest')}>Send digest</button></div></section></div>}
   </section>;
 }
