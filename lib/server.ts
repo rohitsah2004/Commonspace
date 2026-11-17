@@ -1,6 +1,7 @@
+import { defaultSiteSettings, validateSiteSettings } from './site-settings';
 import {env} from 'cloudflare:workers';
 import {getChatGPTUser} from '../app/chatgpt-auth';
-export const SITE='https://commonplace-rohit-notes.rohitreturns00.chatgpt.site';
+export function siteUrl(){const configured=env.SITE_URL;if(configured){try{const url=new URL(configured);if(url.protocol==='https:'&&!url.username&&!url.password&&url.pathname==='/'&&!url.search&&!url.hash)return url.origin}catch{throw Error('SITE_URL must be an HTTPS origin.')}throw Error('SITE_URL must be an HTTPS origin.')}return 'https://commonplace-rohit-notes.rohitreturns00.chatgpt.site'}
 export function database(){if(!env.DB)throw Error('Database unavailable');return env.DB}
 export async function isOwner(){const user=await getChatGPTUser();if(!user)return false;const db=database();let record=await db.prepare("SELECT user_id FROM owners WHERE key='owner'").first<{user_id:string}>();if(record)return record.user_id===user.userId;const email=(env as any).OWNER_EMAIL;if(!email||email.toLowerCase()!==user.email.toLowerCase())return false;await db.prepare("INSERT OR IGNORE INTO owners (key,user_id) VALUES ('owner',?)").bind(user.userId).run();record=await db.prepare("SELECT user_id FROM owners WHERE key='owner'").first<{user_id:string}>();return record?.user_id===user.userId}
 export function json(value:unknown,status=200){return Response.json(value,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}})}
@@ -14,3 +15,5 @@ export const defaultProfile={name:'Rohit',bio:'Ideas, observations, and discover
 export async function getProfile(){const r=await database().prepare("SELECT value FROM settings WHERE key='profile'").first<any>();return r?{...defaultProfile,...JSON.parse(r.value)}:defaultProfile}
 export async function getCollections(){return (await database().prepare('SELECT * FROM collections ORDER BY name').all()).results as any[]}
 export async function snapshot(db:D1Database,id:string,version:number){return db.prepare('INSERT INTO revisions (id,post_id,content,version,created_at) SELECT ?,id,draft,version,? FROM posts WHERE id=? AND version=?').bind(crypto.randomUUID(),Date.now(),id,version)}
+
+export async function getSiteSettings(){const row=await database().prepare("SELECT value FROM settings WHERE key='site'").first<{value:string}>();return row?validateSiteSettings({...defaultSiteSettings,...JSON.parse(row.value)}):defaultSiteSettings}
