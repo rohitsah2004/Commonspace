@@ -15,6 +15,20 @@
       "when": 1794806142995,
       "tag": "0001_outgoing_shriek",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1794868096057,
+      "tag": "0002_damp_puff_adder",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1794868570693,
+      "tag": "0003_melted_lockheed",
+      "breakpoints": true
     }
   ]
 }

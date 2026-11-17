@@ -1,0 +1,1 @@
+CREATE INDEX `posts_public_idx` ON `posts` (`deleted_at`,`published_at`);

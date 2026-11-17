@@ -1,0 +1,2 @@
+export const THEME_SCRIPT = "(()=>{let d=matchMedia('(prefers-color-scheme:dark)').matches;try{const v=localStorage.getItem('commonplace-theme');if(v==='dark'||v==='light')d=v==='dark'}catch{}document.documentElement.classList.toggle('dark',d);const apply=()=>{if(!document.body)return false;document.body.classList.toggle('dark',d);return true};if(!apply()){const o=new MutationObserver(()=>{if(apply())o.disconnect()});o.observe(document.documentElement,{childList:true})}})();";
+export const THEME_HASH = "sha256-D18AhPgZi6A76DqEtTn/tTEi/xdiBc1FS5MExcyKO7c=";

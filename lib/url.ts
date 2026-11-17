@@ -1,0 +1,1 @@
+export function safeURL(value:string,image=false){if(!value)return '';if(image&&/^\/media\/[a-zA-Z0-9.-]+$/.test(value))return value;try{const u=new URL(value);return ['https:',...(image?[]:['http:'])].includes(u.protocol)?u.href:''}catch{return ''}}

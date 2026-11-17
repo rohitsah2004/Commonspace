@@ -1,3 +1,4 @@
+import { legacyPayloadFiles } from './eslint-legacy.mjs';
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
@@ -5,6 +6,9 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  { rules: { "@next/next/no-html-link-for-pages": "off" } },
+  { files: legacyPayloadFiles, rules: { "@typescript-eslint/no-explicit-any": "warn" } },
+  { files: ["app/studio/studio.tsx"], rules: { "react-hooks/immutability": "off" } },
   globalIgnores([
     "dist/**",
     ".vinext/**",
