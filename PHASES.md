@@ -38,3 +38,13 @@ Existing migrations and generated scripts/vendor/UI source remain untouched.
 - Checks: all four commands passed. Added explicit tests proving title > tag > subtitle > body ordering, min-length/cap/filter behavior and absence of full-body sentinel text in homepage HTML.
 - Files: lib/queries.ts, lib/search.ts, app/api/search/route.ts, app/components/use-search.ts/search-snippet.tsx, surgical home/page/article changes and tests.
 - Follow-up: rate limiting is deliberately added in the security phase; no public-page HTML caching yet.
+
+## Phase 5 — code and cheat-sheet reading
+
+- Replaced the generic tokenizer with a dependency-free, language-aware forward scanner for all requested languages. JS private fields and HTTP fragments are no longer treated as hash comments; output remains React text nodes.
+- Added SSR-compatible code blocks with accessible clipboard feedback, deterministic heading IDs/anchor links, H3 editing, and a desktop-sticky/mobile-collapsible ToC.
+- Added wider/dense cheat sheets, reviewed dates, Markdown copy and print/PDF controls, plus print CSS that removes chrome and avoids breaks inside code/tables. Long cheat sheets naturally span pages rather than shrinking illegibly.
+- Added the initial safe Markdown serializer here because cheat-sheet copy needs it; phase 12 adds parsing/frontmatter and downloads.
+- Checks: all four required commands passed. Additional pure-module tests cover tokenizer reconstruction/comment rules/slug deduplication; disposable local SSR checks cover copy controls, duplicate heading IDs, ToC links and print/Markdown actions.
+- Files: lib/highlight.ts, headings.ts, markdown.ts; app/components/document-body.tsx, copy-code.tsx, table-of-contents.tsx, cheatsheet-actions.tsx; surgical RichBody/editor/article/CSS changes; tests/unit.mjs.
+- Follow-up: clipboard/print behavior requires normal browser permissions; print page count depends on content length. No production browser or data was used.

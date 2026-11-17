@@ -68,3 +68,5 @@ from hub import check_types
 check_types(req, ok, anon, owner)
 from hub import check_search
 check_search(req, ok, anon, owner)
+import subprocess
+subprocess.run(['node', 'tests/unit.mjs'], check=True)
