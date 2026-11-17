@@ -1,3 +1,4 @@
+import {validateCollectionMetadata} from './collection-metadata';
 import { defaultSiteSettings, validateSiteSettings } from './site-settings';
 import {env} from 'cloudflare:workers';
 import {getChatGPTUser} from '../app/chatgpt-auth';
@@ -13,7 +14,7 @@ export async function publicRows(){const now=Date.now();const rows=await databas
 export function studioPost(r:any){const due=r.scheduled_at&&r.scheduled_at<=Date.now();return {...r,draft:JSON.parse(r.draft),published:due?JSON.parse(r.scheduled):r.published?JSON.parse(r.published):null,scheduled:!due&&r.scheduled?JSON.parse(r.scheduled):null,scheduled_at:due?null:r.scheduled_at}}
 export const defaultProfile={name:'Rohit',bio:'Ideas, observations, and discoveries worth sharing.',photo:'',linkedin:'',website:''};
 export async function getProfile(){const r=await database().prepare("SELECT value FROM settings WHERE key='profile'").first<any>();return r?{...defaultProfile,...JSON.parse(r.value)}:defaultProfile}
-export async function getCollections(){return (await database().prepare('SELECT * FROM collections ORDER BY name').all()).results as any[]}
+export async function getCollections(){const db=database();const rows=(await db.prepare('SELECT * FROM collections ORDER BY name').all()).results as any[];const metadata=(await db.prepare("SELECT key,value FROM settings WHERE key LIKE 'collection:%'").all()).results as {key:string,value:string}[];return rows.map(row=>{const entry=metadata.find(m=>m.key==='collection:'+row.id);return {...row,...(entry?validateCollectionMetadata(JSON.parse(entry.value)):{})}})}
 export async function snapshot(db:D1Database,id:string,version:number){return db.prepare('INSERT INTO revisions (id,post_id,content,version,created_at) SELECT ?,id,draft,version,? FROM posts WHERE id=? AND version=?').bind(crypto.randomUUID(),Date.now(),id,version)}
 
 export async function getSiteSettings(){const row=await database().prepare("SELECT value FROM settings WHERE key='site'").first<{value:string}>();return row?validateSiteSettings({...defaultSiteSettings,...JSON.parse(row.value)}):defaultSiteSettings}

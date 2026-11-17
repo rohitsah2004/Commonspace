@@ -57,3 +57,12 @@ Existing migrations and generated scripts/vendor/UI source remain untouched.
 - Checks: all four required commands passed. Unit tests cover corrupted/blocked storage, the 500-item limit, strict import fields and projecting cards into saved entries. Local lookup tests cover draft/deleted filtering and the 100-ID cap.
 - Files: lib/saved.ts, progress.ts; /saved and /api/public/lookup; bookmark-button.tsx, collection-steps.tsx; surgical card/sidebar/home/article/collection changes and tests.
 - Follow-up: saved items and progress intentionally do not sync across devices; use the JSON export/import to move saved items. No accounts or database bookmark records were added.
+
+## Phase 7 — maintained learning paths
+
+- Added validated collection edit/delete/reorder actions and management UI, including audience and estimated hours. Optional metadata uses the existing settings table; no schema change is needed.
+- Reordering snapshots previous drafts and atomically checks all submitted versions. It changes position only in each matching draft/live/scheduled snapshot and cannot publish private body edits.
+- Collection pages retain numbered steps, local completion progress and bookmarks; added estimated duration and featured 'Start here' labeling. Collection URLs now appear in the sitemap.
+- Checks: all four required commands passed. Disposable local tests also verified stale reorder rejection, revision creation, metadata edits, collection deletion without broken posts, and live/private body isolation.
+- Files: lib/collection-metadata.ts, manage-collections.ts, app/components/collection-manager.tsx, surgical manage API/UI/server collection/sitemap/page changes.
+- Follow-up: deleting a collection clears its featured setting but deliberately leaves post content intact.
