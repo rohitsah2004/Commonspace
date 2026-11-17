@@ -36,7 +36,7 @@ export async function TypeListing({ type, params, forcedTag }: { type?: ContentT
     q.set('sort', filters.sort); q.set('page', String(page));
     return path + '?' + q;
   };
-  return <Shell owner={await isOwner()}><div className="content">
+  return <Shell ><div className="content">
     <div className="eyebrow"><span/>EXPLORE THE KNOWLEDGE HUB</div><h1>{title}<span>.</span></h1>
     <p>Useful knowledge, organized for the next time you need it.</p>
     <form method="get" className="listingfilters">

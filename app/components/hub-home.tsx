@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import {useOwner} from './ownership';
 import { Shell, Icon } from '../ui';
 import { Subscribe } from '../extras';
 import { useSite } from './site-context';
@@ -14,10 +15,11 @@ import { defaultHubCopy } from '../../lib/hub-copy';
 type Tag = { slug: string; label: string; count: number };
 type Featured = { slug: string; name: string; description: string; audience?: string; estimatedHours?: number };
 export type HubProps = {
-  posts: Card[]; total: number; page: number; owner: boolean;
+  posts: Card[]; total: number; page: number; owner?: boolean;
   sections: Record<ContentType, Card[]>; tags: Tag[]; featured?: Featured;
 };
 export default function HubHome({ posts, total, page, owner, sections, tags, featured }: HubProps) {
+  const effectiveOwner = useOwner() || owner;
   const { settings } = useSite(); const copy = settings.hub ?? defaultHubCopy;
   const [query, setQuery] = useState(''); const [tag, setTag] = useState('');
   const [view, setView] = useState('grid'); const [focused, setFocused] = useState(false);
@@ -35,7 +37,7 @@ export default function HubHome({ posts, total, page, owner, sections, tags, fea
   const searching = query.trim().length >= 2;
   const visible = searching ? remote.results : posts;
   const headings: Record<ContentType, string> = { post: copy.posts, note: copy.notes, cheatsheet: copy.cheatSheets, resource: copy.resources };
-  return <Shell owner={owner}><div className="content hubhome">
+  return <Shell><div className="content hubhome">
     <div className="intro"><div className="eyebrow"><span/>{settings.tagline}</div><h1>{settings.heroTitle}<span>.</span></h1><p>{settings.heroText}</p></div>
     <div className="searchwrap"><Icon name="search"/><input ref={search} aria-label="Search knowledge" value={query} placeholder={copy.searchPlaceholder}
       onChange={e => setQuery(e.target.value)} onFocus={() => setFocused(true)} onBlur={() => setTimeout(() => setFocused(false), 180)}/><kbd>⌘ K /</kbd>
@@ -55,7 +57,7 @@ export default function HubHome({ posts, total, page, owner, sections, tags, fea
     </>}
     <section className="hubrow"><div className="rowheading"><h2>{searching ? 'Search results' : copy.browse} <span>{searching ? visible.length : total}</span></h2><div className="viewtoggle"><button className={'icon ' + (view === 'grid' ? 'active' : '')} aria-label="Grid view" onClick={() => setView('grid')}><Icon name="grid"/></button><button className={'icon ' + (view === 'list' ? 'active' : '')} aria-label="List view" onClick={() => setView('list')}><Icon name="list"/></button></div></div>
       <div className={'stories ' + view}>{visible.map(card => <ContentCard key={card.id} card={card}/>)}</div>
-      {!visible.length && <div className="empty"><h2>{copy.emptyTitle}</h2><p>{copy.emptyText}</p>{owner && <a className="primary" href="/studio">Write something useful</a>}</div>}
+      {!visible.length && <div className="empty"><h2>{copy.emptyTitle}</h2><p>{copy.emptyText}</p>{effectiveOwner && <a className="primary" href="/studio">Write something useful</a>}</div>}
       {!searching && <nav className="pagination" aria-label="Browse pagination">{page > 1 && <a href={'/?page=' + (page - 1)}>← Previous</a>}<span>Page {page}</span>{page * 20 < total && <a href={'/?page=' + (page + 1)}>Next →</a>}</nav>}
     </section>
     <div className="libraryfoot"><a href="/tags">Tags</a><a href="/feed.xml">RSS</a><a href="/privacy">Privacy</a></div>

@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Public cache headers are applied by proxy.ts after Vinext response rendering.
 };
 
 export default nextConfig;

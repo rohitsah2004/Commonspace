@@ -1,8 +1,8 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
 export const posts = sqliteTable('posts', {
  id:text('id').primaryKey(), slug:text('slug').notNull().unique(), draft:text('draft').notNull(), published:text('published'),
  version:integer('version').notNull().default(1), createdAt:integer('created_at').notNull(), updatedAt:integer('updated_at').notNull(), publishedAt:integer('published_at'), deletedAt:integer('deleted_at'),scheduled:text('scheduled'),scheduledAt:integer('scheduled_at')
-});
+}, table => [index('posts_public_idx').on(table.deletedAt,table.publishedAt)]);
 export const owners=sqliteTable('owners',{key:text('key').primaryKey(),userId:text('user_id').notNull()});
 export const revisions=sqliteTable('revisions',{id:text('id').primaryKey(),postId:text('post_id').notNull(),content:text('content').notNull(),version:integer('version').notNull(),createdAt:integer('created_at').notNull()});
 export const settings=sqliteTable('settings',{key:text('key').primaryKey(),value:text('value').notNull()});

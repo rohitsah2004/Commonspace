@@ -75,3 +75,12 @@ Existing migrations and generated scripts/vendor/UI source remain untouched.
 - Checks: typecheck, lint, build and the full loopback integration suite passed, including the full-body-payload sentinel assertion.
 - Files: lib/hub-copy.ts, site-settings.ts; app/components/hub-home.tsx and settings form; surgical app/page.tsx/home shim and CSS.
 - Follow-up: public HTML still intentionally varies with owner status until the next caching-safety phase.
+
+## Phase 9 — identity-free public cache boundary
+
+- Public pages no longer call isOwner or serialize owner-dependent controls. A single client ownership provider reads no-store /api/me; studio routes keep server authorization.
+- Verified anonymous and owner public HTML contain no owner chrome, while /api/me returns the correct boolean and private routes remain uncached.
+- Added explicit public GET/HEAD-only cache policy via Vinext's supported proxy merge, preserving RSC vary headers and excluding RSC/prefetch/private/API requests. Verified installed Vinext source: next.config headers do not override an existing renderer no-store, but middleware owns singular response headers; local runtime assertions confirm the proxy behavior.
+- Added feed ETag/304 and generated drizzle/0002_damp_puff_adder.sql. Local EXPLAIN changed from SCAN posts to SEARCH using posts_public_idx(deleted_at,published_at); the CASE sort still uses a temporary B-tree.
+- Checks: all four commands passed, plus explicit owner/anonymous/cache/private/ETag assertions. No deployment or production access.
+- Cache limitation: fresh TTL is 60 seconds; the requested SWR=300 can serve older HTML during revalidation. This is not a hard 60-second scheduled-publication SLA. Keep no-store when exact-time freshness is mandatory.
