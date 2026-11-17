@@ -48,3 +48,12 @@ Existing migrations and generated scripts/vendor/UI source remain untouched.
 - Checks: all four required commands passed. Additional pure-module tests cover tokenizer reconstruction/comment rules/slug deduplication; disposable local SSR checks cover copy controls, duplicate heading IDs, ToC links and print/Markdown actions.
 - Files: lib/highlight.ts, headings.ts, markdown.ts; app/components/document-body.tsx, copy-code.tsx, table-of-contents.tsx, cheatsheet-actions.tsx; surgical RichBody/editor/article/CSS changes; tests/unit.mjs.
 - Follow-up: clipboard/print behavior requires normal browser permissions; print page count depends on content length. No production browser or data was used.
+
+## Phase 6 — reader saving and progress
+
+- Added strict, capped browser-only saved items with safe storage handling, cross-tab subscriptions, accessible bookmark toggles, navigation count, and saved-list JSON import/export.
+- Added /saved with chunked public availability/title refresh and explicit unavailable/offline states. Lookup accepts at most 100 IDs and only returns published cards.
+- Added bookmark controls to home/type/tag cards, article headers and collection steps; collection completion is browser-local and syncs across tabs.
+- Checks: all four required commands passed. Unit tests cover corrupted/blocked storage, the 500-item limit, strict import fields and projecting cards into saved entries. Local lookup tests cover draft/deleted filtering and the 100-ID cap.
+- Files: lib/saved.ts, progress.ts; /saved and /api/public/lookup; bookmark-button.tsx, collection-steps.tsx; surgical card/sidebar/home/article/collection changes and tests.
+- Follow-up: saved items and progress intentionally do not sync across devices; use the JSON export/import to move saved items. No accounts or database bookmark records were added.

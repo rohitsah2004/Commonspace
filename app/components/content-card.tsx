@@ -1,10 +1,11 @@
+import {BookmarkButton} from './bookmark-button';
 import type { Card } from '../../lib/queries';
 import { TYPE_LABELS } from '../../lib/types';
 import { normalizeTag } from '../../lib/slug';
 
 export function ContentCard({ card }: { card: Card }) {
   return <article className="storycard knowledgecard">
-    <div className="storydetails">
+    <div className="storydetails"><BookmarkButton item={card}/>
       <div className="chips"><span className="statusbadge">{TYPE_LABELS[card.type].singular}</span>
         {card.difficulty && <span className="statusbadge">{card.difficulty}</span>}
         {card.resourceKind && <span className="statusbadge">{card.resourceKind}</span>}
