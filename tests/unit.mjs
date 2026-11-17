@@ -52,3 +52,9 @@ window.localStorage.setItem = () => { throw Error('Storage blocked'); };
 assert.equal(toggleSaved(valid), false);
 delete globalThis.window;
 console.log('PASS: strict saved imports, corrupted/blocked storage, cap, card projection and toggles.');
+
+const { stripJPEGMetadata } = await pureModule('../lib/jpeg.ts');
+const jpeg = new Uint8Array([255,216,255,225,0,8,69,120,105,102,0,0,255,224,0,4,1,2,255,218,0,2,1,2,255,217]);
+assert.deepEqual([...stripJPEGMetadata(jpeg)], [255,216,255,224,0,4,1,2,255,218,0,2,1,2,255,217]);
+assert.throws(() => stripJPEGMetadata(new Uint8Array([255,216,255,225,255,255])));
+console.log('PASS: JPEG APP1/EXIF stripping preserves other segments and rejects malformed lengths.');

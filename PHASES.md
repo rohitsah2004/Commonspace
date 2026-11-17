@@ -92,3 +92,11 @@ Existing migrations and generated scripts/vendor/UI source remain untouched.
 - Checks: all four required commands passed; additional loopback assertions verified well-formed RSS, atom self link, JSON Feed/ETag, sitemap routes and unset-contact 404.
 - Files: lib/html.ts, feeds.ts, snapshot.ts, sitemap.ts, document-schema.ts; feed/security routes, article structured data and distribution components; surgical validation/editor/share changes.
 - Follow-up: old snapshots without an explicit modification timestamp use their known publication timestamp, never private draft update times. Configure securityContact before publishing security.txt.
+
+## Phase 11 — security and privacy
+
+- Added supported proxy security headers and report-only CSP, local Manrope WOFF2 fonts and two preloads, D1 fixed-window salted-IP rate counters, an actual subscription honeypot, and Worker-safe JPEG APP1 metadata removal.
+- Audited all nine POST routes: owner content/files/uploads/manage/newsletter use authorizeWrite; public analytics/subscribe enforce same origin and limits; subscription uses same origin and secret confirmation/unsubscribe tokens. Revisions are read-only and owner protected. No missing owner guard found in owner writes.
+- Checks: all four required commands passed after rerunning integration without concurrent rate-threshold requests. Local assertions verified 429/Retry-After, report-only/security headers and removal of Google font links; JPEG unit checks passed. Local browser preview loaded successfully.
+- Files: proxy.ts, lib/rate-limit.ts/jpeg.ts, generated drizzle/0003_melted_lockheed.sql and schema, fonts/license, subscription/upload hooks, SECURITY.md and environment declarations.
+- Follow-ups: RATE_LIMIT_SALT (>=32 random characters) is required; missing configuration fails closed. HSTS is left to the HTTPS hosting edge until its existing policy is verified. Sites cross-origin iframe verification requires a staging deployment, prohibited in this task; CSP remains report-only. SECURITY.md gives enforcement steps. Explicit owner-authored HTTPS images can still contact their specified hosts; no new third-party public-page requests were added.

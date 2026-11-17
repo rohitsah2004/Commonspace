@@ -1,7 +1,9 @@
+import {rateLimit} from '../../../lib/rate-limit';
 import { searchPublic } from '../../../lib/search';
 import { CONTENT_TYPES, DIFFICULTIES, type ContentType, type Difficulty } from '../../../lib/types';
 
 export async function GET(request: Request) {
+  const limited = await rateLimit(request, 'search'); if (limited) return limited;
   const params = new URL(request.url).searchParams;
   const q = (params.get('q') ?? '').trim().slice(0, 200);
   const type = params.get('type') || undefined;

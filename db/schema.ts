@@ -11,3 +11,9 @@ export const views=sqliteTable('views',{id:text('id').primaryKey(),postId:text('
 export const files=sqliteTable('files',{id:text('id').primaryKey(),key:text('key').notNull(),name:text('name').notNull(),type:text('type').notNull(),size:integer('size').notNull(),createdAt:integer('created_at').notNull()});
 export const subscribers=sqliteTable('subscribers',{id:text('id').primaryKey(),email:text('email').notNull().unique(),status:text('status').notNull(),token:text('token').notNull().unique(),expiresAt:integer('expires_at').notNull(),createdAt:integer('created_at').notNull(),confirmedAt:integer('confirmed_at')});
 export const deliveries=sqliteTable('deliveries',{id:text('id').primaryKey(),postId:text('post_id').notNull(),subscriberId:text('subscriber_id').notNull(),sentAt:integer('sent_at').notNull()});
+
+export const rateLimits = sqliteTable('rate_limits', {
+  key: text('key').primaryKey(),
+  windowStart: integer('window_start').notNull(),
+  count: integer('count').notNull(),
+}, table => [index('rate_limits_cleanup_idx').on(table.windowStart)]);
