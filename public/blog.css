@@ -15,3 +15,5 @@ nav a{display:flex;align-items:center;gap:8px;padding:12px;border-radius:8px;mar
 .honeypot{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden;clip-path:inset(50%);opacity:0;pointer-events:none}
 
 html.dark{color-scheme:dark;--bg:#181818;--side:#1f1f1f;--surface:#272727;--ink:#e8ece7;--muted:#a0aaa3;--line:#313131;--green:#8cc6a6;--soft:#313131;--hover:#313131;--shadow:0 16px 48px #0004}
+
+.ai-dialog{width:min(880px,calc(100% - 32px));max-height:90vh;overflow:auto}.ai-dialog::backdrop{background:#101a1666;backdrop-filter:blur(4px)}.ai-preview{margin-top:24px}.ai-original{white-space:pre-wrap;overflow-wrap:anywhere;max-height:480px;overflow:auto;padding:16px;background:var(--bg);border:1px solid var(--line);border-radius:8px}.ai-dialog [role=status]{margin-top:16px;line-height:24px}.ai-dialog .prose{max-height:480px;overflow:auto}

@@ -1,4 +1,5 @@
 'use client';
+import {AIAssistant} from './ai-assistant';
 import { useState } from 'react';
 import type { Content } from '../../lib/content';
 import { importMarkdown } from '../../lib/markdown-import';
@@ -7,7 +8,7 @@ import { MARKDOWN_LIMIT } from '../../lib/markdown-parser';
 import { slugify } from '../../lib/slug';
 export function MarkdownTools({ content, onImport }: { content: Content; onImport: (content: Content) => void }) {
   const [open, setOpen] = useState(false); const [source, setSource] = useState(''); const [error, setError] = useState('');
-  return <section className="markdowntools"><div className="chips"><button type="button" className="chip" onClick={() => setOpen(true)}>Import Markdown</button>
+  return <section className="markdowntools"><div className="chips"><button type="button" className="chip" onClick={() => setOpen(true)}>Import Markdown</button><AIAssistant content={content} onApply={onImport}/>
     <button type="button" className="chip" onClick={() => {
       const url = URL.createObjectURL(new Blob([contentToMarkdown(content)], { type: 'text/markdown;charset=utf-8' }));
       const a = document.createElement('a'); a.href = url; a.download = (slugify(content.title) || 'draft') + '.md'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);

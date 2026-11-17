@@ -9,3 +9,7 @@ declare namespace Cloudflare { interface Env { OWNER_EMAIL?: string; } }
 declare namespace Cloudflare { interface Env { SITE_URL?: string; } }
 
 declare namespace Cloudflare { interface Env { RATE_LIMIT_SALT?: string; } }
+
+declare namespace Cloudflare {
+  interface Env { OPENAI_API_KEY?: string; AI_MODEL?: string; AI_PROVIDER?: string; }
+}
