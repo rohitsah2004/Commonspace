@@ -6,7 +6,7 @@ export function validateMetadata(
 ): ContentMetadata {
   const type = input.type === undefined ? 'post' : input.type;
   if (!CONTENT_TYPES.includes(type as never)) throw Error('Unknown content type.');
-  const difficulty = input.difficulty ?? '';
+  const difficulty = input.difficulty === undefined ? '' : input.difficulty;
   if (difficulty !== '' && !DIFFICULTIES.includes(difficulty as never)) {
     throw Error('Unknown difficulty.');
   }
@@ -29,7 +29,7 @@ export function validateMetadata(
     if (input.takeaway !== undefined && (typeof input.takeaway !== 'string' || input.takeaway.length > 280)) {
       throw Error('Keep the resource takeaway within 280 characters.');
     }
-    const kind = input.resourceKind ?? 'other';
+    const kind = input.resourceKind === undefined ? 'other' : input.resourceKind;
     if (!RESOURCE_KINDS.includes(kind as never)) throw Error('Unknown resource kind.');
     metadata.resourceUrl = url;
     metadata.takeaway = (input.takeaway as string | undefined)?.trim() ?? '';

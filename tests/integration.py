@@ -63,3 +63,6 @@ act('delete');assert req(anon,'/post/'+slug)[0]==404;assert req(anon,file['url']
 act('restore');restored=next(x for x in ok(owner,'/api/posts?studio=1')['posts'] if x['id']==p['id']);assert restored['published'] is None and restored['scheduled_at'] is None
 act('delete')
 print('PASS: private tools, revision restore, scheduled visibility with separate snapshots, collections, profile, attachments access, image storage, full ZIP integrity and asset contents, syntax highlighting, captions/tables, view deduplication, source counts, version conflicts, trash restoration, and email-disconnected state.')
+
+from hub import check_types
+check_types(req, ok, anon, owner)
