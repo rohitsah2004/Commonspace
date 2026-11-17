@@ -29,3 +29,12 @@ Existing migrations and generated scripts/vendor/UI source remain untouched.
 - Checks: all four required commands passed; legacy lint warnings remain visible. No forbidden generated/configuration paths changed.
 - Files: app/components/content-fields.tsx, content-card.tsx, listing.tsx, knowledge-nav.tsx; type/tag routes and API; surgical editor/article/sidebar changes; tests/hub.py and integration hook; public/blog.css.
 - Follow-up: homepage body payload removal and debounced search are the next phase; Saved navigation is added when its route exists.
+
+## Phase 4 — lightweight payloads and server search
+
+- Homepage receives cards only, never full document bodies. Added a public scored search endpoint with min query length, type/tag/difficulty filters, a hard 30-result cap, HTML-safe JSON snippets, and a 30-second public cache policy.
+- Added a 200 ms debounced, abortable search hook, safe text highlighting, type badges in suggestions, and `/` focus in addition to Cmd/Ctrl+K.
+- Article metadata/body/related/series reuse request-scoped parsed public items; related ranking uses tag overlap then type then recency.
+- Checks: all four commands passed. Added explicit tests proving title > tag > subtitle > body ordering, min-length/cap/filter behavior and absence of full-body sentinel text in homepage HTML.
+- Files: lib/queries.ts, lib/search.ts, app/api/search/route.ts, app/components/use-search.ts/search-snippet.tsx, surgical home/page/article changes and tests.
+- Follow-up: rate limiting is deliberately added in the security phase; no public-page HTML caching yet.

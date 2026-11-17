@@ -66,3 +66,5 @@ print('PASS: private tools, revision restore, scheduled visibility with separate
 
 from hub import check_types
 check_types(req, ok, anon, owner)
+from hub import check_search
+check_search(req, ok, anon, owner)

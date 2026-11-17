@@ -41,3 +41,30 @@ def check_types(req, ok, anon, owner):
     for item, version in fixtures:
         ok(owner, '/api/posts/' + item['id'], {'action': 'delete', 'version': version})
     print('PASS: strict metadata, legacy post default, resource HTTPS validation, type and tag listings, and private filtering.')
+
+
+def check_search(req, ok, anon, owner):
+    assert ok(anon, '/api/search?q=a')['results'] == []
+    assert req(anon, '/api/search?q=needle&type=invalid')[0] == 400
+    ids = []
+    for i in range(35):
+        content = {
+            'title': 'Needle title' if i == 0 else 'Search fixture ' + str(i),
+            'subtitle': 'needle subtitle' if i == 2 else '', 'cover': '',
+            'tags': ['Needle'] if i == 1 else ['Search testing'],
+            'type': 'post' if i < 4 else 'note',
+            'difficulty': 'beginner' if i == 1 else 'intermediate',
+            'body': [{'tag': 'p', 'children': [{'text': ('Needle body. ' if i >= 3 else '') + 'Safe excerpt. ' * 30 + 'BODY_PAYLOAD_SHOULD_NOT_REACH_HOME'}]}],
+        }
+        item = ok(owner, '/api/posts', content)
+        result = ok(owner, '/api/posts/' + item['id'], {'action': 'publish', 'version': item['version'], 'content': content})
+        ids.append((item, result['version']))
+    hits = ok(anon, '/api/search?q=needle&type=post&limit=30')['results']
+    assert [h['id'] for h in hits] == [p['id'] for p, _ in ids[:4]]
+    assert all('body' not in h and 'snippet' in h for h in hits)
+    assert len(ok(anon, '/api/search?q=needle&limit=999')['results']) == 30
+    assert len(ok(anon, '/api/search?q=needle&type=post&tag=needle&difficulty=beginner')['results']) == 1
+    assert 'BODY_PAYLOAD_SHOULD_NOT_REACH_HOME' not in req(anon, '/')[1]
+    for item, version in ids:
+        ok(owner, '/api/posts/' + item['id'], {'action': 'delete', 'version': version})
+    print('PASS: search scoring, filters, minimum length, limit cap, snippets, and body-free homepage payload.')

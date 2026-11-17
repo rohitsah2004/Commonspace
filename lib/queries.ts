@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { publicRows } from './server';
 import { plainText, readingTime, type Content } from './content';
 import { normalizeTag } from './slug';
@@ -7,7 +8,7 @@ export type PublicRow = { id: string; slug: string; published: string; published
 export type PublicItem = { row: PublicRow; content: Content };
 export type Card = {
   id: string; slug: string; type: ContentType; title: string; subtitle: string;
-  excerpt: string; tags: string[]; difficulty: Difficulty | ''; resourceUrl?: string;
+  excerpt: string; cover?: string; tags: string[]; difficulty: Difficulty | ''; resourceUrl?: string;
   resourceKind?: ResourceKind; takeaway?: string; reviewedAt?: number;
   publishedAt: number; updatedAt: number; readingTime: number; series?: string; position?: number;
 };
@@ -20,15 +21,15 @@ export function parseRows(rows: PublicRow[]): PublicItem[] {
   return rows.map(row => { const content: Content = JSON.parse(row.published); return { row, content: { ...content, type: content.type ?? 'post' } }; });
 }
 
-export async function publicItems(): Promise<PublicItem[]> {
+export const publicItems = cache(async (): Promise<PublicItem[]> => {
   return parseRows(await publicRows());
-}
+});
 
 export function toCard(item: PublicItem | PublicRow): Card {
   const { row, content: c } = 'row' in item ? item : parseRows([item])[0];
   return {
     id: row.id, slug: row.slug, type: c.type ?? 'post', title: c.title, subtitle: c.subtitle,
-    excerpt: plainText(c.body).replace(/\s+/g, ' ').trim().slice(0, 200), tags: c.tags,
+    cover: c.type === 'resource' ? undefined : c.cover, excerpt: plainText(c.body).replace(/\s+/g, ' ').trim().slice(0, 200), tags: c.tags,
     difficulty: c.difficulty ?? '', resourceUrl: c.resourceUrl, resourceKind: c.resourceKind,
     takeaway: c.takeaway, reviewedAt: c.reviewedAt, publishedAt: row.published_at,
     updatedAt: row.updated_at, readingTime: readingTime(c), series: c.series, position: c.position,
@@ -40,7 +41,7 @@ export function score(item: PublicItem, query: string): number {
   if (!q) return 0;
   const c = item.content;
   return (c.title.toLowerCase().includes(q) ? 100 : 0)
-    + (c.tags.some(t => t.toLowerCase().includes(q) || normalizeTag(t).includes(normalizeTag(q))) ? 40 : 0)
+    + (c.tags.some(t => t.toLowerCase().includes(q) || (!!normalizeTag(q) && normalizeTag(t).includes(normalizeTag(q)))) ? 40 : 0)
     + (c.subtitle.toLowerCase().includes(q) ? 20 : 0)
     + (plainText(c.body).toLowerCase().includes(q) ? 5 : 0);
 }
