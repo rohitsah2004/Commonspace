@@ -60,6 +60,6 @@ export default function HubHome({ posts, total, page, owner, sections, tags, fea
       {!visible.length && <div className="empty"><h2>{copy.emptyTitle}</h2><p>{copy.emptyText}</p>{effectiveOwner && <a className="primary" href="/studio">Write something useful</a>}</div>}
       {!searching && <nav className="pagination" aria-label="Browse pagination">{page > 1 && <a href={'/?page=' + (page - 1)}>← Previous</a>}<span>Page {page}</span>{page * 20 < total && <a href={'/?page=' + (page + 1)}>Next →</a>}</nav>}
     </section>
-    <div className="libraryfoot"><a href="/tags">Tags</a><a href="/feed.xml">RSS</a><a href="/privacy">Privacy</a></div>
+    <div className="libraryfoot"><a href="/tags">Tags</a><a href="/follow">RSS</a><a href="/privacy">Privacy</a></div>
   </div></Shell>;
 }

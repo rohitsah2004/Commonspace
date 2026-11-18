@@ -142,3 +142,10 @@ Existing migrations and generated scripts/vendor/UI source remain untouched.
 - Changed the OpenAI adapter to manual redirect handling; the existing non-2xx rejection still fails closed on every 3xx and never forwards Authorization. Fixed the same unsupported option in the resource checker's DNS preflight. Added regressions for provider/resolver redirects and safe error separation between provider failures and invalid drafts, with no provider body/header disclosure.
 - Verified a real synthetic-note request through the local Worker returned HTTP 200 and validated content after the fix. Separate short and near-limit synthetic provider diagnostics also passed. No production notes were read, modified or sent to the provider; temporary diagnostic logs and local model configuration were removed before the normal suite.
 - All five required checks passed: typecheck, lint (0 errors, prior 105 warnings), build, node --test tests/unit.mjs tests/digest.mjs, and loopback integration. No new migrations or protected-path changes. Following the owner's standing instruction, merge and deploy this fix after validation.
+
+## Readable RSS subscription flow — codex/rss-follow-page
+
+- Verified the deployed /feed.xml returns HTTP 200 and valid RSS containing published items. Browser inspection confirmed the reported confusing page was raw XML rather than a feed/server failure.
+- Added /follow with a canonical, selectable feed address, copy feedback/manual clipboard fallback and three reader setup steps. Homepage RSS calls to action now open this guide; raw /feed.xml and HTML feed autodiscovery remain unchanged for existing readers.
+- Reused the existing Shell, typography, panels, theme tokens and responsive layout. Added loopback assertions for guide navigation, canonical feed URL and unchanged well-formed XML.
+- All five checks passed (typecheck, lint with prior 105 warnings/0 errors, build, Node unit/digest tests, loopback integration). Browser preview automation timed out, so interactive clipboard/visual QA was limited. No schema or protected-path changes. Merge/deploy follows the owner's standing preference.
