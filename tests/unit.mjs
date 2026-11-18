@@ -93,3 +93,6 @@ assert.equal((await checkHTTPS('https://example.org', redirectMock)).status,'bro
 const privateDNS = async () => Response.json({Status:0,Answer:[{type:1,data:'10.0.0.1'}]});
 assert.equal((await checkHTTPS('https://example.org', privateDNS)).status,'broken');
 console.log('PASS: link-check private DNS/IP/credential/port guards and redirect cap with mocked networking only.');
+
+// Includes the real assist route/provider/pipeline with mocked external networking.
+await import('./assist.mjs');
