@@ -81,7 +81,7 @@ assert(publicAddress('93.184.216.34')); assert(publicAddress('2606:4700:4700::11
 for (const value of ['http://example.org','https://localhost/','https://127.0.0.1','https://0x7f000001','https://[::1]','https://example.org:8443','https://user:pass@example.org']) assert.throws(() => resourceURL(value));
 let outbound = 0;
 const mock = async (url, options) => {
-  if (String(url).startsWith('https://cloudflare-dns.com/')) return Response.json({Status:0,Answer:[{type:1,data:'93.184.216.34'}]});
+  if (String(url).startsWith('https://cloudflare-dns.com/')) { assert.equal(options.redirect,'manual'); return Response.json({Status:0,Answer:[{type:1,data:'93.184.216.34'}]}); }
   outbound++; assert.equal(options.method,'HEAD'); assert.equal(options.redirect,'manual');
   return new Response(null,{status:302,headers:{location:'https://localhost/private'}});
 };
@@ -96,3 +96,13 @@ console.log('PASS: link-check private DNS/IP/credential/port guards and redirect
 
 // Includes the real assist route/provider/pipeline with mocked external networking.
 await import('./assist.mjs');
+
+let dnsRedirectCalls = 0;
+const dnsRedirect = async (url, options) => {
+  dnsRedirectCalls++; assert(String(url).startsWith('https://cloudflare-dns.com/'));
+  assert.equal(options.redirect, 'manual');
+  return new Response(null, {status:302,headers:{Location:'https://localhost/private'}});
+};
+assert.equal((await checkHTTPS('https://example.org', dnsRedirect)).status, 'broken');
+assert.equal(dnsRedirectCalls, 2); // A and AAAA resolver calls only; never follow the redirect or send a resource HEAD.
+console.log('PASS: Worker-compatible redirect policy rejects provider/resolver redirects without forwarding credentials.');

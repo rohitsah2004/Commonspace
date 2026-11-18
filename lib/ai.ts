@@ -33,7 +33,8 @@ export async function callModel({ system, user, maxTokens, signal }: {
   try {
     if (!assistReady(env)) throw failure();
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST', signal, redirect: 'error', headers: {
+      // Workers supports manual/follow, not error. Reject every 3xx below; never forward the key.
+      method: 'POST', signal, redirect: 'manual', headers: {
         Authorization: 'Bearer ' + env.OPENAI_API_KEY!.trim(), 'Content-Type': 'application/json',
       },
       // max_tokens is deprecated; max_completion_tokens caps visible + reasoning tokens.

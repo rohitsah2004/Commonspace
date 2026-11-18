@@ -68,13 +68,14 @@ console.error=(...args)=>logs.push(args);console.log=(...args)=>logs.push(args);
 try {
   globalThis.fetch=async(url,options)=> {
     assert.equal(url,'https://api.openai.com/v1/chat/completions');fixture.calls++;
-    assert.equal(options.redirect,'error');assert.equal(options.headers.Authorization,'Bearer '+placeholder);
+    assert.equal(options.redirect,'manual');assert.equal(options.headers.Authorization,'Bearer '+placeholder);
     const body=JSON.parse(options.body);fixture.requests.push(body);
     assert.equal(body.model,'disposable-test-model');assert.equal(body.store,false);assert(body.max_completion_tokens<=6000);
     fixture.onFetch?.();
     if(fixture.timeout || options.signal.aborted) {
       return await new Promise((resolve,reject)=>{const fail=()=>reject(new DOMException('Provider private detail '+placeholder,'AbortError'));if(options.signal.aborted)fail();else options.signal.addEventListener('abort',fail,{once:true});});
     }
+    if(fixture.response==='redirect')return new Response(null,{status:302,headers:{Location:'https://untrusted.invalid/', 'X-Private':placeholder}});
     if(fixture.response==='error')return new Response(JSON.stringify({error:placeholder+' raw owner text'}),{status:401,headers:{'X-Private':placeholder}});
     if(fixture.response==='huge-envelope')return new Response('x'.repeat(260000));
     return Response.json({choices:[{finish_reason:fixture.response==='truncated'?'length':'stop',message:{content:fixture.response==='ok'?markdown:fixture.response}}],usage:{prompt_tokens:42,completion_tokens:84,total_tokens:126,private:placeholder}});
@@ -118,8 +119,9 @@ try {
   assert.equal(data.content.series,'');assert.deepEqual(data.content.attachments,[]);
   const fencedResponse=await (await post({...value,text:original})).json();assert.deepEqual(fencedResponse.warnings,['Code block 1 differs from your original','Code block 2 differs from your original']);
   fixture.response=markdown+'\n\n<script>literal</script> [bad](javascript:alert)';const hostileResponse=await post(value);assert.equal(hostileResponse.status,200);const safeBody=JSON.stringify((await hostileResponse.json()).content.body);assert(!safeBody.includes('"tag":"script"'));assert(!safeBody.includes('"href"'));
-  for(const kind of ['error','huge-envelope','truncated','no frontmatter',markdown+'x'.repeat(120001),markdown+'\n'+placeholder]) {
-    fixture.response=kind;const r=await post(value);assert.equal(r.status,502);const body=await r.text();assert(!body.includes(placeholder));assert(!body.includes('raw owner text'));assert.equal(r.headers.get('Cache-Control'),'no-store');
+  fixture.response='redirect';const beforeRedirect=fixture.calls;assert.equal((await post(value)).status,502);assert.equal(fixture.calls,beforeRedirect+1);
+  for(const kind of ['redirect','error','huge-envelope','truncated','no frontmatter',markdown+'x'.repeat(120001),markdown+'\n'+placeholder]) {
+    fixture.response=kind;const r=await post(value);assert.equal(r.status,502);const body=await r.text();assert(!body.includes(placeholder));assert(!body.includes('raw owner text'));if(kind==='error')assert(body.includes('OpenAI could not complete formatting'));if(kind==='no frontmatter')assert(body.includes('did not pass draft validation'));assert.equal(r.headers.get('Cache-Control'),'no-store');
   }
   fixture.response='ok';fixture.timeout=true;assert.equal((await post(value)).status,504);fixture.timeout=false;
   const controller=new AbortController();fixture.onFetch=()=>controller.abort();assert.equal((await post(value,undefined,controller.signal)).status,504);fixture.onFetch=null;

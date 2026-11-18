@@ -26,12 +26,14 @@ export async function POST(request: Request) {
   const controller = new AbortController(); const cancel = () => controller.abort();
   const timer = setTimeout(cancel, 60000); request.signal.addEventListener('abort', cancel, { once: true });
   if (request.signal.aborted) controller.abort();
+  let receivedOutput = false;
   try {
     const prompt = buildPrompt(input.mode, input.text, input.hints);
     const result = await callModel({ ...prompt, maxTokens: AI_MAX_TOKENS, signal: controller.signal });
+    receivedOutput = true;
     const content = validatedAssistContent(result.markdown);
     return json({ content, warnings: codeWarnings(input.text, content.body), usage: result.usage });
   } catch {
-    return json({ error: controller.signal.aborted ? 'AI formatting stopped or timed out. Your original text is unchanged.' : 'AI formatting failed or returned an invalid draft. Your original text is unchanged. Try again or use Markdown import.' }, controller.signal.aborted ? 504 : 502);
+    return json({ error: controller.signal.aborted ? 'AI formatting stopped or timed out. Your original text is unchanged.' : receivedOutput ? 'The AI response did not pass draft validation. Your original text is unchanged. Try again or use Markdown import.' : 'OpenAI could not complete formatting. Try again or check the server API access and credits. Your original text is unchanged.' }, controller.signal.aborted ? 504 : 502);
   } finally { clearTimeout(timer); request.signal.removeEventListener('abort', cancel); }
 }

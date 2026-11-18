@@ -21,7 +21,7 @@ async function assertPublicDNS(host: string, signal: AbortSignal, fetcher: typeo
   // Check both address families; any unsafe answer rejects the destination. CNAMEs are resolved by the trusted recursive resolver.
   const answers = await Promise.all(['A', 'AAAA'].map(async type => {
     const response = await fetcher('https://cloudflare-dns.com/dns-query?name=' + encodeURIComponent(host) + '&type=' + type,
-      { headers: { Accept: 'application/dns-json' }, redirect: 'error', signal });
+      { headers: { Accept: 'application/dns-json' }, redirect: 'manual', signal });
     if (!response.ok) throw Error('DNS check failed.');
     const value = await response.json() as { Status: number; Answer?: DNSAnswer[] };
     if (value.Status !== 0) throw Error('DNS check failed.');
