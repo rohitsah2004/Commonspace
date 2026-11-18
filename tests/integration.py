@@ -72,6 +72,8 @@ import subprocess
 subprocess.run(['node', 'tests/unit.mjs'], check=True)
 subprocess.run(['node', 'tests/digest.mjs'], check=True)
 
+from hub import check_follow
+check_follow(req, anon)
 from hub import check_extended, check_rate_limit, check_assist
 check_assist(req, ok, anon, owner, base)
 check_extended(req, ok, anon, owner, base)

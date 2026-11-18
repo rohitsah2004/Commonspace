@@ -244,3 +244,19 @@ def check_assist(req, ok, anon, owner, base):
     after = {p['id']: p['version'] for p in ok(owner, '/api/posts?studio=1')['posts']}
     assert before == after
     print('PASS: loopback AI owner/origin guards, no-store readiness, disabled configuration, input limits and no draft/publish writes.')
+
+
+def check_follow(req, anon):
+    import xml.etree.ElementTree as ET
+    status, html = req(anon, '/follow')
+    assert status == 200 and 'Copy feed link' in html and 'How to follow' in html
+    assert 'View raw RSS (XML)' in html and 'role="status"' in html
+    status, feed = req(anon, '/feed.xml')
+    assert status == 200
+    root = ET.fromstring(feed)
+    assert root.tag == 'rss'
+    origin = root.find('channel/link').text
+    assert origin + '/feed.xml' in html
+    home = req(anon, '/')[1]
+    assert 'href="/follow"' in home
+    print('PASS: readable RSS guide, canonical copyable feed URL, homepage navigation and unchanged valid XML feed.')
