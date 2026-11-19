@@ -74,8 +74,9 @@ subprocess.run(['node', 'tests/digest.mjs'], check=True)
 
 from hub import check_follow
 check_follow(req, anon)
-from hub import check_extended, check_rate_limit, check_assist
+from hub import check_extended, check_rate_limit, check_assist, check_clip
 check_assist(req, ok, anon, owner, base)
+check_clip(req, ok, anon, owner)
 check_extended(req, ok, anon, owner, base)
 # Run threshold checks last so they cannot interfere with functional search tests.
 check_rate_limit(anon, base)
