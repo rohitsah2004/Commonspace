@@ -30,7 +30,7 @@ fixture.database={prepare(query){
 }};
 globalThis.sessionFixture=fixture;
 const mocks = new Map([
-  [new URL('lib/server.ts',root).href, `export const database=()=>globalThis.sessionFixture.database;export const isOwner=async()=>globalThis.sessionFixture.owner;export const json=(value,status=200)=>Response.json(value,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});export const authorizeWrite=async request=>request.headers.get('origin')!==new URL(request.url).origin||!globalThis.sessionFixture.owner?json({error:'Owner and same origin required.'},403):null;`],
+  [new URL('lib/server.ts',root).href, `export const database=()=>globalThis.sessionFixture.database;export const isOwner=async()=>{if(globalThis.sessionFixture.authFail)throw Error('PRIVATE_AUTH_DB_ERROR');return globalThis.sessionFixture.owner;};export const json=(value,status=200)=>Response.json(value,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});export const authorizeWrite=async request=>request.headers.get('origin')!==new URL(request.url).origin||!globalThis.sessionFixture.owner?json({error:'Owner and same origin required.'},403):null;`],
   [new URL('app/chatgpt-auth.ts',root).href, `export const getChatGPTUser=async()=>globalThis.sessionFixture.owner?{userId:globalThis.sessionFixture.user}:null;`],
   [new URL('app/components/document-body.tsx',root).href, 'export const DocumentBody=()=>null;'],
   ['cloudflare:workers', 'export const env=globalThis.sessionFixture.env;'],
@@ -63,6 +63,7 @@ try {
  const req=(method,value,origin='http://127.0.0.1:5173')=>new Request('http://127.0.0.1:5173/api/sessions',{method,headers:{Origin:origin},...(value===undefined?{}:{body:JSON.stringify(value)})});
  const context=id=>({params:Promise.resolve({id})});
  const value={name:'HTB - Lame',platform:'HTB',difficulty:'beginner',status:'active'};
+ fixture.authFail=true;const authFailure=await list.GET(req('GET'));assert.equal(authFailure.status,503);assert(!(await authFailure.text()).includes('PRIVATE_AUTH_DB_ERROR'));fixture.authFail=false;
  fixture.owner=false;assert.equal((await list.GET(req('GET'))).status,403);assert.equal((await list.POST(req('POST',value))).status,403);fixture.owner=true;
  assert.equal((await list.POST(req('POST',value,'https://evil.invalid'))).status,403);
  for(const patch of [{name:''},{platform:'x'.repeat(101)},{difficulty:['beginner']},{status:['active']},{unexpected:true}])assert.equal((await list.POST(req('POST',{...value,...patch}))).status,400);
