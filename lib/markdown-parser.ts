@@ -36,7 +36,7 @@ export function parseMarkdown(source: string): { metadata: Record<string, unknow
     if (end > 0) {
       for (const line of lines.slice(1, end)) {
         const m = /^([a-zA-Z]+):\s*(.*)$/.exec(line); if (!m) continue;
-        const key = m[1]; if (!['title','subtitle','tags','type','difficulty','series','position','resourceUrl','resourceKind','takeaway','reviewedAt'].includes(key)) continue;
+        const key = m[1]; if (!['title','subtitle','excerpt','tags','type','difficulty','series','position','resourceUrl','resourceKind','takeaway','reviewedAt'].includes(key)) continue;
         let value: unknown = m[2].trim();
         try { value = JSON.parse(value as string); } catch { value = (value as string).replace(/^(['"])(.*)\1$/, '$2'); }
         if (key === 'tags' && typeof value === 'string') value = value.replace(/^\[|\]$/g, '').split(',').map(t => t.trim().replace(/^['"]|['"]$/g, '')).filter(Boolean);

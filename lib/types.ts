@@ -11,6 +11,7 @@ export const DIFFICULTIES: Difficulty[] = ['beginner', 'intermediate', 'advanced
 export const RESOURCE_KINDS = ['tool', 'lab', 'ctf', 'cert', 'paper', 'video', 'course', 'book', 'other'] as const;
 export type ResourceKind = typeof RESOURCE_KINDS[number];
 export type ContentMetadata = {
+  excerpt?: string;
   type?: ContentType;
   difficulty?: Difficulty | '';
   reviewedAt?: number;

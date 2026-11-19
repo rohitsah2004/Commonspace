@@ -25,7 +25,7 @@ export async function rss(request: Request): Promise<Response> {
     const self = origin + '/feed.xml' + new URL(request.url).search;
     const body = `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>${xml(site.title)} — ${xml(profile.name)}</title><link>${origin}</link><description>${xml(profile.bio)}</description><atom:link href="${xml(self)}" rel="self" type="application/rss+xml"/>${items.map(item => {
       const c = item.content; const url = origin + '/post/' + item.row.slug;
-      return `<item><title>${xml(c.title)}</title><link>${url}</link><guid isPermaLink="true">${url}</guid><description>${xml(c.subtitle)}</description><pubDate>${new Date(item.row.published_at).toUTCString()}</pubDate>${c.tags.map(tag => `<category>${xml(tag)}</category>`).join('')}<content:encoded>${cdata(feedHTML(c, origin))}</content:encoded></item>`;
+      return `<item><title>${xml(c.title)}</title><link>${url}</link><guid isPermaLink="true">${url}</guid><description>${xml(c.excerpt || c.subtitle)}</description><pubDate>${new Date(item.row.published_at).toUTCString()}</pubDate>${c.tags.map(tag => `<category>${xml(tag)}</category>`).join('')}<content:encoded>${cdata(feedHTML(c, origin))}</content:encoded></item>`;
     }).join('')}</channel></rss>`;
     return response(request, body, 'application/rss+xml; charset=utf-8');
   } catch { return Response.json({ error: 'Invalid feed filters.' }, { status: 400 }); }
@@ -37,7 +37,7 @@ export async function jsonFeed(request: Request): Promise<Response> {
       home_page_url: origin, feed_url: origin + '/feed.json' + new URL(request.url).search, description: profile.bio,
       authors: [{ name: profile.name, url: origin + '/about' }],
       items: items.map(item => ({ id: origin + '/post/' + item.row.slug, url: origin + '/post/' + item.row.slug,
-        title: item.content.title, content_html: feedHTML(item.content, origin), summary: item.content.subtitle,
+        title: item.content.title, content_html: feedHTML(item.content, origin), summary: item.content.excerpt || item.content.subtitle,
         date_published: new Date(item.row.published_at).toISOString(), date_modified: new Date(snapshotModified(item)).toISOString(),
         tags: item.content.tags, ...(item.content.cover ? { image: new URL(item.content.cover, origin).href } : {}) })),
     });

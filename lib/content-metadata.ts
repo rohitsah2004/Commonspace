@@ -11,6 +11,10 @@ export function validateMetadata(
     throw Error('Unknown difficulty.');
   }
   const metadata: ContentMetadata = { type: type as ContentMetadata['type'], difficulty: difficulty as ContentMetadata['difficulty'] };
+  if (input.excerpt !== undefined) {
+    if (typeof input.excerpt !== 'string' || input.excerpt.length > 500) throw Error('Keep the excerpt within 500 characters.');
+    metadata.excerpt = input.excerpt.trim();
+  }
   if (input.reviewedAt !== undefined) {
     if (typeof input.reviewedAt !== 'number' || !Number.isSafeInteger(input.reviewedAt)
       || input.reviewedAt < Date.UTC(2000, 0, 1) || input.reviewedAt > Date.now() + 86400000) {

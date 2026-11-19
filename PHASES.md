@@ -149,3 +149,15 @@ Existing migrations and generated scripts/vendor/UI source remain untouched.
 - Added /follow with a canonical, selectable feed address, copy feedback/manual clipboard fallback and three reader setup steps. Homepage RSS calls to action now open this guide; raw /feed.xml and HTML feed autodiscovery remain unchanged for existing readers.
 - Reused the existing Shell, typography, panels, theme tokens and responsive layout. Added loopback assertions for guide navigation, canonical feed URL and unchanged well-formed XML.
 - All five checks passed (typecheck, lint with prior 105 warnings/0 errors, build, Node unit/digest tests, loopback integration). Browser preview automation timed out, so interactive clipboard/visual QA was limited. No schema or protected-path changes. Merge/deploy follows the owner's standing preference.
+
+## Structured AI drafting improvements — 2026-11-18
+
+- Replaced Markdown frontmatter responses with strict JSON schemas; full actions return metadata/body and metadata-only uses its own tags/excerpt schema. Server validation rejects malformed output and never turns errors into titles.
+- Added mode × editor-type prompts, D1 taxonomy context, canonical tags with unambiguous near-match mapping, and a two-new-tag limit. Collections remain owner-selected.
+- Protect fenced blocks, inline code and URLs with per-request placeholders; reject missing, duplicate, altered or unknown tokens and post-conversion fenced-code differences.
+- Added shared secret heuristics, explicit send consent enforced server-side, and assistant-input redaction. No raw/provider content is logged. Heuristics cannot detect all secrets.
+- Retry once on 429/5xx within a shared deadline; reserve quota atomically, refund provider/validation failures and cancellation against the original UTC day, retain counted provider request rejections.
+- Added metadata-only and rough-notes-to-cheat-sheet actions, local TODO review, and editable excerpt persistence through JSON snapshots, Markdown, cards/feeds/social descriptions.
+- No dependencies, SQL migrations, existing-content rewrites, or provider-key changes. Existing hosting identity/audience preserved.
+- Checks: TypeScript, production build, lint (0 errors / 105 pre-existing warnings), unit/mock-provider tests and localhost integration. Browser: real OpenAI full-format and metadata previews with synthetic input, secret-consent/redaction and local TODO extraction verified. A metadata schema wiring error found during real-provider QA was fixed and covered by exact request-key regression checks.
+- Embeddings/Vectorize NOT enabled: the available Sites hosting schema/tools offer no supported Vectorize index provisioning or binding. README records the prerequisite and visibility-safe indexing/search plan; keyword search and tag-related notes remain active. Do not claim semantic search is live.

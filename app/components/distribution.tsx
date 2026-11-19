@@ -9,7 +9,7 @@ export function Distribution({ content, slug }: { content: Content; slug?: strin
   const { origin } = useSite(); const [message, setMessage] = useState('');
   if (!slug) return <p className="distributionnote">Save this draft first to prepare its permanent URL.</p>;
   const canonical = origin + '/post/' + slug;
-  const text = [content.title, content.subtitle || plainText(content.body).slice(0, 200), content.tags.map(tag => '#' + slugify(tag).replace(/-/g, '')).filter(tag => tag !== '#').join(' '), canonical].filter(Boolean).join('\n\n');
+  const text = [content.title, content.excerpt || content.subtitle || plainText(content.body).slice(0, 200), content.tags.map(tag => '#' + slugify(tag).replace(/-/g, '')).filter(tag => tag !== '#').join(' '), canonical].filter(Boolean).join('\n\n');
   async function copy(value: string) {
     try { await navigator.clipboard.writeText(value); setMessage('Copied.'); }
     catch { setMessage('Clipboard unavailable. Select and copy the URL below.'); }

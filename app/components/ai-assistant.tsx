@@ -4,15 +4,24 @@ import { useEffect, useRef, useState } from 'react';
 import { RichBody, validateContent, type Content } from '../../lib/content';
 import { CONTENT_TYPES, TYPE_LABELS, type ContentType } from '../../lib/types';
 import { ASSIST_INPUT_LIMIT } from '../../lib/assist-limits';
+import { secretWarnings, redactSecrets } from '../../lib/assist-secrets';
+import { nodesToMarkdown } from '../../lib/markdown';
 import type { AssistMode } from '../../lib/assist-prompt';
 
-type Result = { content: Content; warnings: string[] };
+type Result = { content: Content; warnings: string[]; metadataOnly?: boolean };
+function reviewTodos(content: Content): string[] {
+  return nodesToMarkdown(content.body).split('\n').filter(line => /TODO:/i.test(line)).map(line => line.trim());
+}
 export function AIAssistant({ content, onApply }: { content: Content; onApply: (content: Content) => void }) {
   const [ready, setReady] = useState<boolean | null>(null);
   const [open, setOpen] = useState(false); const [text, setText] = useState('');
   const [mode, setMode] = useState<AssistMode>('format'); const [type, setType] = useState<ContentType | ''>('');
   const [tags, setTags] = useState(''); const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(''); const [result, setResult] = useState<Result | null>(null);
+  const [consentedText, setConsentedText] = useState<string | null>(null);
+  const [review, setReview] = useState<string[] | null>(null);
+  const consentFingerprint = text + '\n' + tags;
+  const detected = secretWarnings(consentFingerprint);
   const [before, setBefore] = useState(false); const [confirmation, setConfirmation] = useState<string | null>(null);
   const dialog = useRef<HTMLDialogElement>(null); const textarea = useRef<HTMLTextAreaElement>(null);
   const request = useRef<AbortController | null>(null);
@@ -30,22 +39,23 @@ export function AIAssistant({ content, onApply }: { content: Content; onApply: (
     setMessage('AI formatting cancelled. Your original text is unchanged.');
   }
   function close() { cancel(); setResult(null); setConfirmation(null); dialog.current?.close(); }
-  async function format() {
+  async function format(sendAnyway = false) {
     setMessage(''); setConfirmation(null);
     if (!text.trim() || text.length > ASSIST_INPUT_LIMIT) { setMessage('Enter between 1 and 20,000 characters.'); return; }
+    if (detected.length && !sendAnyway) { setConsentedText(consentFingerprint); setMessage('This looks like it contains a secret. Redact it or confirm sending below.'); return; }
     const tagHints = tags.split(',').map(tag => tag.trim()).filter(Boolean);
     if (tagHints.length > 6 || tagHints.some(tag => tag.length > 40)) { setMessage('Use up to six tag hints, each within 40 characters.'); return; }
     request.current?.abort(); const controller = new AbortController(); request.current = controller;
     setBusy(true); setResult(null); setBefore(false);
     try {
       const response = await fetch('/api/assist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal,
-        body: JSON.stringify({ text, mode, hints: { ...(type ? { type } : {}), ...(tagHints.length ? { tags: tagHints } : {}) } }) });
-      const data = await response.json() as { content?: unknown; warnings?: unknown; error?: string };
+        body: JSON.stringify({ text, mode, secretConsent: sendAnyway, hints: { type: mode === 'cheatsheet' ? 'cheatsheet' : type || content.type || 'post', ...(tagHints.length ? { tags: tagHints } : {}) } }) });
+      const data = await response.json() as { content?: unknown; metadata?: { tags: string[]; excerpt: string }; warnings?: unknown; error?: string };
       if (controller.signal.aborted || request.current !== controller) return;
       if (!response.ok) throw Error(data.error || 'AI formatting failed. Your original text is unchanged.');
-      const safe = validateContent(data.content);
+      const safe = data.metadata ? validateContent({ ...content, title: content.title.trim() || 'Untitled draft', tags: data.metadata.tags, excerpt: data.metadata.excerpt }) : validateContent(data.content);
       if (!Array.isArray(data.warnings) || data.warnings.some(warning => typeof warning !== 'string')) throw Error('Invalid draft response. Your original text is unchanged.');
-      setResult({ content: safe, warnings: data.warnings }); setMessage('Preview ready. Review it before applying to your draft.');
+      setResult({ content: safe, warnings: data.warnings, metadataOnly: !!data.metadata }); setMessage('Preview ready. Review it before applying to your draft.');
     } catch (error) {
       if (!controller.signal.aborted && request.current === controller) setMessage(error instanceof Error ? error.message : 'AI formatting failed. Your original text is unchanged.');
     } finally { if (request.current === controller) { request.current = null; setBusy(false); } }
@@ -54,32 +64,37 @@ export function AIAssistant({ content, onApply }: { content: Content; onApply: (
     if (!result) return;
     const nonempty = !!(content.title.trim() || content.subtitle || content.body.length || content.tags.length || content.cover || content.resourceUrl || content.attachments?.length);
     const fingerprint = JSON.stringify(content);
-    if (nonempty && confirmation !== fingerprint) { setConfirmation(fingerprint); setMessage('This replaces your current draft text. Confirm below, or discard the AI result.'); return; }
+    if (nonempty && confirmation !== fingerprint) { setConfirmation(fingerprint); setMessage('This changes your current draft. Confirm below, or discard the AI result.'); return; }
     // Preserve owner-selected files, cover and collection; AI has no authority over them.
+    if (result.metadataOnly) { onApply({ ...content, tags: result.content.tags, excerpt: result.content.excerpt }); close(); return; }
     onApply({ ...content, ...result.content, cover: content.cover, attachments: content.attachments, series: content.series, position: content.position });
     close();
   }
   return <>
-    <button type="button" className="chip" disabled={ready !== true} onClick={() => { setMessage(''); setOpen(true); }}>Format with AI</button>
+    <button type="button" className="chip" disabled={ready !== true} onClick={() => { setMessage(''); setReview(null); setOpen(true); }}>Format with AI</button>
+    <button type="button" className="chip" onClick={() => setReview(reviewTodos(content))}>Review TODOs</button>
+    {review !== null && <section aria-label="TODO review"><h3>TODO review</h3>{review.length ? <ul>{review.map((item, i) => <li key={i}>{item}</li>)}</ul> : <p>No TODO: placeholders in this draft.</p>}<button type="button" onClick={() => setReview(null)}>Close review</button></section>}
     {ready !== true && <small>{ready === null ? 'Checking AI configuration…' : 'AI formatting is off. Configure OPENAI_API_KEY and AI_MODEL on the server, then reload.'}</small>}
     <dialog ref={dialog} className="ai-dialog" aria-labelledby="ai-assistant-title" onCancel={cancel} onClose={() => { setOpen(false); setResult(null); setConfirmation(null); }}>
       <div className="dialoghead"><h2 id="ai-assistant-title">Format with AI</h2><button type="button" onClick={close} aria-label="Close AI assistant">Close</button></div>
+      <button type="button" className="chip" disabled={busy || !!result} onClick={() => { setText(nodesToMarkdown(content.body)); setConsentedText(null); }}>Use current draft text</button>
       <p>Your text is sent to the AI provider you configured.</p>
       <p>Review every command and claim. Applying creates a draft change; publishing remains your choice.</p>
       <form onSubmit={event => { event.preventDefault(); format(); }}>
-        <label>Original text<textarea ref={textarea} rows={10} value={text} readOnly={busy || !!result} onChange={event => setText(event.target.value)} aria-describedby="ai-input-count"/></label>
+        <label>Original text<textarea ref={textarea} rows={10} value={text} readOnly={busy || !!result} onChange={event => { setText(event.target.value); setConsentedText(null); }} aria-describedby="ai-input-count"/></label>
         <small id="ai-input-count">{text.length.toLocaleString()} / 20,000 characters</small>
-        <div className="formrow"><label>Mode<select value={mode} disabled={busy || !!result} onChange={event => setMode(event.target.value as AssistMode)}><option value="format">Format</option><option value="polish">Polish</option><option value="outline">Outline</option></select></label>
-          <label>Optional type hint<select value={type} disabled={busy || !!result} onChange={event => setType(event.target.value as ContentType | '')}><option value="">Let AI suggest</option>{CONTENT_TYPES.map(value => <option value={value} key={value}>{TYPE_LABELS[value].singular}</option>)}</select></label></div>
+        <div className="formrow"><label>Mode<select value={mode} disabled={busy || !!result} onChange={event => setMode(event.target.value as AssistMode)}><option value="format">Format</option><option value="polish">Polish</option><option value="outline">Outline</option><option value="metadata">Suggest tags and excerpt</option><option value="cheatsheet">Rough notes to cheat sheet</option></select></label>
+          <label>Optional type hint<select value={type} disabled={busy || !!result} onChange={event => setType(event.target.value as ContentType | '')}><option value="">Use current editor type</option>{CONTENT_TYPES.map(value => <option value={value} key={value}>{TYPE_LABELS[value].singular}</option>)}</select></label></div>
         <label>Optional tag hints (comma separated)<input value={tags} disabled={busy || !!result} onChange={event => setTags(event.target.value)} maxLength={250}/></label>
+        {!busy && !result && detected.length > 0 && <div className="errorbox" role="alert"><p>Possible sensitive content: {detected.join(', ')}. Detection is approximate; review before sending.</p><button type="button" onClick={() => { setText(redactSecrets(text)); setTags(redactSecrets(tags)); setConsentedText(null); setMessage('Possible secrets redacted in this input only. Review it before sending.'); }}>Redact detected values</button>{consentedText === consentFingerprint && <button type="button" onClick={() => format(true)}>Send this text anyway</button>}</div>}
         <div role="status" aria-live="polite">{busy ? 'Formatting your text… You can cancel at any time.' : message}</div>
         {!result && <div className="dialogfoot"><button type="submit" className="primary" disabled={busy || !text.trim() || text.length > ASSIST_INPUT_LIMIT}>Format with AI</button>{busy && <button type="button" onClick={cancel}>Cancel request</button>}</div>}
       </form>
       {result && <section className="ai-preview" aria-label="AI draft preview">
         {result.warnings.length > 0 && <div className="errorbox" role="alert"><strong>Review changed code before applying</strong><ul>{result.warnings.map(warning => <li key={warning}>{warning}</li>)}</ul></div>}
         <div className="chips" role="group" aria-label="Compare original and formatted text"><button type="button" className="chip" aria-pressed={before} onClick={() => setBefore(true)}>Before</button><button type="button" className="chip" aria-pressed={!before} onClick={() => setBefore(false)}>After</button></div>
-        {before ? <pre className="ai-original">{text}</pre> : <div><h3>{result.content.title}</h3><p>{result.content.subtitle}</p><small>{result.content.type} · {result.content.difficulty} · {result.content.tags.join(', ')}</small><div className="prose"><RichBody nodes={result.content.body}/></div></div>}
-        {confirmation !== null && <p className="errorbox">Replace your current draft text? Your cover, attachments and collection will be kept.</p>}
+        {before ? <pre className="ai-original">{text}</pre> : <div><h3>{result.metadataOnly ? 'Suggested tags and excerpt' : result.content.title}</h3>{!result.metadataOnly && <p>{result.content.subtitle}</p>}<p>{result.content.excerpt}</p><small>{result.metadataOnly ? 'Tags: ' : result.content.type + ' · ' + result.content.difficulty + ' · '}{result.content.tags.join(', ')}</small>{!result.metadataOnly && <div className="prose"><RichBody nodes={result.content.body}/></div>}</div>}
+        {confirmation !== null && <p className="errorbox">Apply these changes to your draft? Your cover, attachments and collection will be kept.</p>}
         <div className="dialogfoot"><button type="button" onClick={() => { setResult(null); setConfirmation(null); setMessage('AI result discarded. Your original text is unchanged.'); }}>Discard</button><button type="button" className="primary" onClick={apply}>{confirmation === null ? 'Apply to draft' : 'Confirm replacement'}</button></div>
       </section>}
     </dialog>
