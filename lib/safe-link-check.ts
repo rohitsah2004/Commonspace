@@ -17,7 +17,7 @@ export function resourceURL(value: string): URL {
   url.hostname = host; return url;
 }
 type DNSAnswer = { type: number; data: string };
-async function assertPublicDNS(host: string, signal: AbortSignal, fetcher: typeof fetch) {
+export async function assertPublicDNS(host: string, signal: AbortSignal, fetcher: typeof fetch) {
   // Check both address families; any unsafe answer rejects the destination. CNAMEs are resolved by the trusted recursive resolver.
   const answers = await Promise.all(['A', 'AAAA'].map(async type => {
     const response = await fetcher('https://cloudflare-dns.com/dns-query?name=' + encodeURIComponent(host) + '&type=' + type,

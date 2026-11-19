@@ -106,3 +106,5 @@ const dnsRedirect = async (url, options) => {
 assert.equal((await checkHTTPS('https://example.org', dnsRedirect)).status, 'broken');
 assert.equal(dnsRedirectCalls, 2); // A and AAAA resolver calls only; never follow the redirect or send a resource HEAD.
 console.log('PASS: Worker-compatible redirect policy rejects provider/resolver redirects without forwarding credentials.');
+
+await import('./clip.mjs');

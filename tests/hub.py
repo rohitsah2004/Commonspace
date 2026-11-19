@@ -263,3 +263,14 @@ def check_follow(req, anon):
     home = req(anon, '/')[1]
     assert 'href="/follow"' in home
     print('PASS: readable RSS guide, canonical copyable feed URL, homepage navigation and unchanged valid XML feed.')
+
+
+def check_clip(req, ok, anon, owner):
+    before = ok(owner, '/api/posts?studio=1')['posts']
+    assert req(anon, '/api/clip', {'url': 'https://example.org'})[0] == 403
+    for url in ['http://example.org', 'https://localhost', 'https://127.0.0.1', 'https://user:pass@example.org', 'https://example.org:8443', 'x' * 20001]:
+        assert req(owner, '/api/clip', {'url': url})[0] == 400
+    assert req(owner, '/api/clip', {'url': 'https://example.org', 'extra': True})[0] == 400
+    assert req(owner, '/api/clip', {'url': 123})[0] == 400
+    assert ok(owner, '/api/posts?studio=1')['posts'] == before
+    print('PASS: clip owner guard, bounded/blocked input validation and no draft writes; no live outbound fetches.')
