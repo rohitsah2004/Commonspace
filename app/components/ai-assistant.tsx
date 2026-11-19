@@ -13,7 +13,7 @@ type Result = { content: Content; warnings: string[]; metadataOnly?: boolean; so
 function reviewTodos(content: Content): string[] {
   return nodesToMarkdown(content.body).split('\n').filter(line => /TODO:/i.test(line)).map(line => line.trim());
 }
-export function AIAssistant({ content, onApply }: { content: Content; onApply: (content: Content) => void }) {
+export function AIAssistant({ content, onApply, seedText, seedMode, triggerLabel }: { content: Content; onApply: (content: Content) => void; seedText?: string; seedMode?: AssistMode; triggerLabel?: string }) {
   const [ready, setReady] = useState<boolean | null>(null);
   const [open, setOpen] = useState(false); const [text, setText] = useState('');
   const [mode, setMode] = useState<AssistMode>('format'); const [type, setType] = useState<ContentType | ''>('');
@@ -99,27 +99,28 @@ export function AIAssistant({ content, onApply }: { content: Content; onApply: (
     close();
   }
   return <>
-    <button type="button" className="chip" disabled={ready !== true} onClick={() => { setMessage(''); setReview(null); setOpen(true); }}>Format with AI</button>
-    <button type="button" className="chip" onClick={() => setReview(reviewTodos(content))}>Review TODOs</button>
+    <button type="button" className="chip" disabled={ready !== true} onClick={() => { setMessage(''); setReview(null); if (seedText !== undefined) { setText(seedText); setMode(seedMode || 'format'); setType(seedMode === 'writeup' ? 'post' : ''); setSource(null); setClipNotice(''); setConsentedText(null); } setOpen(true); }}>{triggerLabel || 'Format with AI'}</button>
+    {seedMode !== 'writeup' && <button type="button" className="chip" onClick={() => setReview(reviewTodos(content))}>Review TODOs</button>}
     {review !== null && <section aria-label="TODO review"><h3>TODO review</h3>{review.length ? <ul>{review.map((item, i) => <li key={i}>{item}</li>)}</ul> : <p>No TODO: placeholders in this draft.</p>}<button type="button" onClick={() => setReview(null)}>Close review</button></section>}
     {ready !== true && <small>{ready === null ? 'Checking AI configuration…' : 'AI formatting is off. Configure OPENAI_API_KEY and AI_MODEL on the server, then reload.'}</small>}
     <dialog ref={dialog} className="ai-dialog" aria-labelledby="ai-assistant-title" onCancel={cancel} onClose={() => { setOpen(false); setResult(null); setConfirmation(null); }}>
       <div className="dialoghead"><h2 id="ai-assistant-title">Format with AI</h2><button type="button" onClick={close} aria-label="Close AI assistant">Close</button></div>
-      <button type="button" className="chip" disabled={busy || clipping || !!result} onClick={() => { setText(nodesToMarkdown(content.body)); setSource(null); setClipNotice(''); setConsentedText(null); }}>Use current draft text</button>
+      {seedMode !== 'writeup' && <><button type="button" className="chip" disabled={busy || clipping || !!result} onClick={() => { setText(nodesToMarkdown(content.body)); setSource(null); setClipNotice(''); setConsentedText(null); }}>Use current draft text</button>
       <section className="cliptools" aria-label="Load text from a link">
         <label>From link<input type="url" maxLength={2048} placeholder="https://…" value={clipLink} disabled={busy || clipping || !!result}
           onChange={event => setClipLink(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); clip(); } }}/></label>
         <button type="button" className="chip" disabled={busy || clipping || !!result || !clipLink.trim()} onClick={clip}>Load link</button>
         <small>Public web pages, GitHub files, repositories and gists. Loading a link does not send it to AI.</small>
-      </section>
+      </section></>}
+      {seedMode === 'writeup' && <p className="errorbox">From session log: review before publishing. Many platforms prohibit publishing solutions for active machines. Check before publishing.</p>}
       {source && <div className="clipsource"><p>Source: <a href={source.sourceUrl} target="_blank" rel="noopener noreferrer">{source.title || source.sourceUrl}</a></p><p>{clipNotice}</p><small>Attribution is added when you apply a full draft. Review third-party material before publishing.</small></div>}
       <p>Your text is sent to the AI provider you configured.</p>
       <p>Review every command and claim. Applying creates a draft change; publishing remains your choice.</p>
       <form onSubmit={event => { event.preventDefault(); format(); }}>
         <label>Original text<textarea ref={textarea} rows={10} value={text} readOnly={busy || clipping || !!result} onChange={event => { setText(event.target.value); setConsentedText(null); }} aria-describedby="ai-input-count"/></label>
         <small id="ai-input-count">{text.length.toLocaleString()} / 20,000 characters</small>
-        <div className="formrow"><label>Mode<select value={mode} disabled={busy || clipping || !!result} onChange={event => setMode(event.target.value as AssistMode)}><option value="format">Format</option><option value="polish">Polish</option><option value="outline">Outline</option><option value="metadata">Suggest tags and excerpt</option><option value="cheatsheet">Rough notes to cheat sheet</option></select></label>
-          <label>Optional type hint<select value={type} disabled={busy || clipping || !!result} onChange={event => setType(event.target.value as ContentType | '')}><option value="">Use current editor type</option>{CONTENT_TYPES.map(value => <option value={value} key={value}>{TYPE_LABELS[value].singular}</option>)}</select></label></div>
+        <div className="formrow"><label>Mode<select value={mode} disabled={busy || clipping || !!result || seedMode === 'writeup'} onChange={event => setMode(event.target.value as AssistMode)}><option value="format">Format</option><option value="polish">Polish</option><option value="outline">Outline</option><option value="metadata">Suggest tags and excerpt</option><option value="cheatsheet">Rough notes to cheat sheet</option><option value="writeup">Session log to writeup</option></select></label>
+          <label>Optional type hint<select value={type} disabled={busy || clipping || !!result || seedMode === 'writeup'} onChange={event => setType(event.target.value as ContentType | '')}><option value="">Use current editor type</option>{CONTENT_TYPES.map(value => <option value={value} key={value}>{TYPE_LABELS[value].singular}</option>)}</select></label></div>
         <label>Optional tag hints (comma separated)<input value={tags} disabled={busy || clipping || !!result} onChange={event => setTags(event.target.value)} maxLength={250}/></label>
         {!busy && !clipping && !result && detected.length > 0 && <div className="errorbox" role="alert"><p>Possible sensitive content: {detected.join(', ')}. Detection is approximate; review before sending.</p><button type="button" onClick={() => { setText(redactSecrets(text)); setTags(redactSecrets(tags)); setConsentedText(null); setMessage('Possible secrets redacted in this input only. Review it before sending.'); }}>Redact detected values</button>{consentedText === consentFingerprint && <button type="button" onClick={() => format(true)}>Send this text anyway</button>}</div>}
         <div role="status" aria-live="polite">{clipping ? 'Loading readable text… You can cancel at any time.' : busy ? 'Formatting your text… You can cancel at any time.' : message}</div>

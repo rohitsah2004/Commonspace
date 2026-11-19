@@ -11,6 +11,10 @@ export function validateMetadata(
     throw Error('Unknown difficulty.');
   }
   const metadata: ContentMetadata = { type: type as ContentMetadata['type'], difficulty: difficulty as ContentMetadata['difficulty'] };
+  if (input.sessionReview !== undefined) {
+    if (typeof input.sessionReview !== 'boolean') throw Error('Invalid session review marker.');
+    if (input.sessionReview) metadata.sessionReview = true;
+  }
   if (input.excerpt !== undefined) {
     if (typeof input.excerpt !== 'string' || input.excerpt.length > 500) throw Error('Keep the excerpt within 500 characters.');
     metadata.excerpt = input.excerpt.trim();
