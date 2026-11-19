@@ -1,0 +1,34 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import ts from 'typescript';
+async function moduleURL(file) {
+  let code=ts.transpileModule(await readFile(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.ES2022,target:ts.ScriptTarget.ES2022}}).outputText;
+  for(const match of [...code.matchAll(/from ["']([^"']+)["']/g)])if(match[1].startsWith('.'))code=code.replace(match[0],'from '+JSON.stringify(await moduleURL(new URL(match[1]+'.ts',file))));
+  return 'data:text/javascript;base64,'+Buffer.from(code).toString('base64');
+}
+const {maskSessionTargets:mask,parseBareHosts,suggestedBareHost}=await import(await moduleURL(new URL('../lib/session-mask.ts',import.meta.url)));
+const {compileSession}=await import(await moduleURL(new URL('../lib/session-compile.ts',import.meta.url)));
+const {protectLiterals}=await import(await moduleURL(new URL('../lib/assist-protection.ts',import.meta.url)));
+assert.equal(suggestedBareHost('HTB - Lame'),'lame');assert.equal(suggestedBareHost('HTB - Lame (local QA)'),'lame');
+assert.deepEqual(parseBareHosts('Lame, lame\nBOX'),['lame','box']);assert.throws(()=>parseBareHosts('../lame'));assert.throws(()=>parseBareHosts('445'));
+assert.equal(mask('lame LAME blame flame', ['lame']),'<HOST_1> <HOST_1> blame flame');
+assert.equal(mask('lame LAME blame flame'), 'lame LAME blame flame');
+assert.equal(mask('/tmp/lame C:\\Users\\lame --lame --host=lame lame.py "lame" `LAME`', ['lame']),'/tmp/lame C:\\Users\\lame --lame --host=lame lame.py "<HOST_1>" `<HOST_1>`');
+assert.equal(mask('http://lame/lame https://box.htb/path/lame?file=lame.py', ['lame']),'http://<HOST_1>/lame https://<HOST_2>/path/lame?file=lame.py');
+assert.equal(mask('10.10.10.3:445 10.10.10.3/24 192.168.1.0/24 10.10.10.3'),'<TARGET_IP_1>:445 <TARGET_IP_1>/24 <TARGET_IP_2>/24 <TARGET_IP_1>');
+assert.equal(mask('2.4.18 1.2.3 445 8080 v2.4.18 999.1.2.3'),'2.4.18 1.2.3 445 8080 v2.4.18 999.1.2.3');
+assert.equal(mask('exploit.py run.sh notes.txt smb.conf page.php app.js readme.md /tmp/foo.htb github.com api.github.com exploit-db.com nmap.org'),'exploit.py run.sh notes.txt smb.conf page.php app.js readme.md /tmp/foo.htb github.com api.github.com exploit-db.com nmap.org');
+assert.equal(mask('--target=box.htb --box.htb'), '--target=<HOST_1> --box.htb');
+assert.equal(mask('box.htb BOX.HTB lame other.htb box.htb', ['lame']),'<HOST_1> <HOST_1> <HOST_2> <HOST_3> <HOST_1>');
+assert.equal(mask('[2001:db8::1]:445 2001:0db8:0:0:0:0:0:1/64 ::1'),'<TARGET_IP_1>:445 <TARGET_IP_1>/64 <TARGET_IP_2>');
+assert.equal(mask('https://github.com/10.1.2.3/lame',['lame']),'https://github.com/<TARGET_IP_1>/lame');
+const session={id:'x',name:'HTB - Lame',platform:'HTB',difficulty:'beginner',status:'active',created_at:0,updated_at:0};
+const raw='  echo "&& | $(id) <>"\nC:\\Users\\lame\n``` embedded\n\n  ';
+const entries=[{id:'b',session_id:'x',type:'command',phase:'recon',content:raw,created_at:2000},{id:'a',session_id:'x',type:'finding',phase:'privesc',content:'finding',created_at:1000},{id:'c',session_id:'x',type:'output',phase:'recon',content:'output',created_at:3000}];
+const result=compileSession(session,entries);assert(result.text.includes(raw));assert(result.text.includes('````text\n'+raw+'\n````'));assert(result.text.indexOf('## Recon')<result.text.indexOf('## Privilege Escalation'));assert(result.text.indexOf(raw)<result.text.indexOf('\noutput\n'));
+const protectedLog=protectLiterals(result.text);assert.equal(protectedLog.restore(protectedLog.text),result.text);
+const selected=compileSession(session,entries,{start:2,end:3,phases:['recon']});assert.equal(selected.included,2);assert.equal(selected.total,3);assert(!selected.text.includes('\nfinding'));
+const oversized=compileSession(session,[{...entries[0],content:'x'.repeat(20000)}]);assert(oversized.overLimit);assert.equal(oversized.included,1);assert(oversized.text.includes('x'.repeat(20000)));assert.equal(oversized.characters,oversized.text.length);
+const masked=compileSession(session,[{...entries[0],content:'ping lame 10.10.10.3:445 box.htb'}],{mask:true,bareNames:['lame']});assert(masked.text.includes('<HOST_1>'));assert(masked.text.includes('<TARGET_IP_1>:445'));assert(!masked.text.includes('10.10.10.3'));
+assert.throws(()=>compileSession(session,entries,{start:3,end:2}));
+console.log('PASS: session compile byte fidelity, fences, phase/order/range/counts and no truncation; one-way IP/IPv6/CIDR/host masks, whole-token bare names, allowlist/files/versions/ports and numbering.');

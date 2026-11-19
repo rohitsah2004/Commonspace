@@ -110,3 +110,5 @@ console.log('PASS: Worker-compatible redirect policy rejects provider/resolver r
 await import('./clip.mjs');
 
 await import('./session-api.mjs');
+
+await import('./session-compile.mjs');

@@ -12,6 +12,7 @@ export const RESOURCE_KINDS = ['tool', 'lab', 'ctf', 'cert', 'paper', 'video', '
 export type ResourceKind = typeof RESOURCE_KINDS[number];
 export type ContentMetadata = {
   excerpt?: string;
+  sessionReview?: boolean;
   type?: ContentType;
   difficulty?: Difficulty | '';
   reviewedAt?: number;
