@@ -17,3 +17,15 @@ export const rateLimits = sqliteTable('rate_limits', {
   windowStart: integer('window_start').notNull(),
   count: integer('count').notNull(),
 }, table => [index('rate_limits_cleanup_idx').on(table.windowStart)]);
+
+export const sessions = sqliteTable('sessions', {
+  id: text('id').primaryKey(), ownerId: text('owner_id').notNull(),
+  name: text('name').notNull(), platform: text('platform').notNull(),
+  difficulty: text('difficulty').notNull(), status: text('status').notNull(),
+  createdAt: integer('created_at').notNull(), updatedAt: integer('updated_at').notNull(),
+}, table => [index('sessions_owner_idx').on(table.ownerId, table.updatedAt)]);
+export const sessionEntries = sqliteTable('session_entries', {
+  id: text('id').primaryKey(), sessionId: text('session_id').notNull().references(() => sessions.id, { onDelete: 'cascade' }),
+  ownerId: text('owner_id').notNull(), type: text('type').notNull(), phase: text('phase').notNull(),
+  content: text('content').notNull(), createdAt: integer('created_at').notNull(),
+}, table => [index('session_entries_session_created_idx').on(table.sessionId, table.createdAt)]);

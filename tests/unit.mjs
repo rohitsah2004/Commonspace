@@ -108,3 +108,5 @@ assert.equal(dnsRedirectCalls, 2); // A and AAAA resolver calls only; never foll
 console.log('PASS: Worker-compatible redirect policy rejects provider/resolver redirects without forwarding credentials.');
 
 await import('./clip.mjs');
+
+await import('./session-api.mjs');
