@@ -12,7 +12,7 @@ export function ContentCard({ card }: { card: Card }) {
       </div>
       <a href={'/post/' + card.slug}><h3>{card.title}</h3></a>
       {card.type === 'resource' && card.resourceUrl && <small>{new URL(card.resourceUrl).hostname}</small>}
-      <p>{card.takeaway || card.subtitle || card.excerpt}</p>
+      <p>{card.takeaway || card.excerpt || card.subtitle}</p>
       <div className="chips">{card.tags.map(tag => <a key={tag} href={'/tags/' + normalizeTag(tag)} className="chip">{tag}</a>)}</div>
       <div className="storymeta"><time dateTime={new Date(card.publishedAt).toISOString()}>{new Date(card.publishedAt).toISOString().slice(0, 10)}</time><span>· {card.readingTime} min read</span></div>
       {card.type === 'resource' && card.resourceUrl && <a className="textbutton resourcevisit" href={card.resourceUrl} target="_blank" rel="noopener noreferrer">Visit resource ↗</a>}

@@ -1,23 +1,24 @@
 import { blank, validateContent, type Content, type DocNode } from './content';
 import { parseMarkdown } from './markdown-parser';
-import { importMarkdown } from './markdown-import';
 import { nodeText } from './headings';
 import { ASSIST_MODES, type AssistMode, type AssistHints } from './assist-prompt';
-import { CONTENT_TYPES, DIFFICULTIES, type ContentType } from './types';
+import { CONTENT_TYPES, type ContentType } from './types';
 
+import { validateAssistResult } from './assist-result';
+import { normalizeAssistTags } from './assist-taxonomy';
 import { ASSIST_INPUT_LIMIT } from './assist-limits';
 export { ASSIST_INPUT_LIMIT } from './assist-limits';
 export class AssistInputError extends Error {
   constructor(message: string, public status = 400) { super(message); }
 }
-export function validateAssistInput(input: unknown): { text: string; mode: AssistMode; hints: AssistHints } {
+export function validateAssistInput(input: unknown): { text: string; mode: AssistMode; hints: AssistHints; secretConsent: boolean } {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new AssistInputError('Provide text and a formatting mode.');
   const value = input as Record<string, unknown>;
-  if (Object.keys(value).some(key => !['text', 'mode', 'hints'].includes(key))) throw new AssistInputError('Invalid formatting request fields.');
+  if (Object.keys(value).some(key => !['text', 'mode', 'hints', 'secretConsent'].includes(key))) throw new AssistInputError('Invalid formatting request fields.');
   if (typeof value.text !== 'string') throw new AssistInputError('Provide text to format.');
   if (value.text.length > ASSIST_INPUT_LIMIT) throw new AssistInputError('Use at most 20,000 characters.', 413);
   if (!value.text.trim()) throw new AssistInputError('Provide text to format.');
-  if (!ASSIST_MODES.includes(value.mode as AssistMode)) throw new AssistInputError('Choose Format, Polish or Outline.');
+  if (!ASSIST_MODES.includes(value.mode as AssistMode)) throw new AssistInputError('Choose a supported AI action.');
   const hints: AssistHints = {};
   if (value.hints !== undefined) {
     if (!value.hints || typeof value.hints !== 'object' || Array.isArray(value.hints)) throw new AssistInputError('Invalid formatting hints.');
@@ -32,7 +33,8 @@ export function validateAssistInput(input: unknown): { text: string; mode: Assis
       hints.tags = h.tags as string[];
     }
   }
-  return { text: value.text, mode: value.mode as AssistMode, hints };
+  if (value.secretConsent !== undefined && typeof value.secretConsent !== 'boolean') throw new AssistInputError('Invalid secret confirmation.');
+  return { text: value.text, mode: value.mode as AssistMode, hints, secretConsent: value.secretConsent === true };
 }
 export async function readAssistInput(request: Request) {
   // JSON escapes can use six bytes per input character; bound the envelope too.
@@ -69,16 +71,17 @@ export function codeWarnings(input: string, output: DocNode[]): string[] {
   walk(output);
   return inputCodeBlocks(input).flatMap((code, i) => actual[i] === code ? [] : ['Code block ' + (i + 1) + ' differs from your original']);
 }
-export function validatedAssistContent(markdown: string): Content {
-  if (new TextEncoder().encode(markdown).length > 120000) throw Error('AI output too large.');
-  if (!/^---\r?\n/.test(markdown)) throw Error('AI frontmatter missing.');
-  const parsed = parseMarkdown(markdown); const m = parsed.metadata;
-  if (!['title','subtitle','type','difficulty','tags'].every(key => Object.hasOwn(m, key))
-    || typeof m.title !== 'string' || !m.title.trim() || typeof m.subtitle !== 'string'
-    || !DIFFICULTIES.includes(m.difficulty as never) || !Array.isArray(m.tags) || m.tags.length > 6 || m.tags.some(tag => typeof tag !== 'string')) throw Error('Invalid AI frontmatter.');
-  const imported = importMarkdown(markdown, blank());
-  // AI cannot choose collections, timestamps, cover images, file attachments or publishing state.
-  return validateContent({ title: imported.title, subtitle: imported.subtitle, type: imported.type, difficulty: imported.difficulty,
-    cover: '', tags: imported.tags.map(tag => tag.toLowerCase()), body: imported.body,
-    resourceUrl: imported.resourceUrl, takeaway: imported.takeaway, resourceKind: imported.resourceKind, series: '', position: 0, attachments: [] });
+export function validatedAssistContent(input: unknown, existingTags: string[] = []): Content {
+  const result = validateAssistResult(input);
+  if (new TextEncoder().encode(result.markdown).length > 120000 || /^---\r?\n/.test(result.markdown)) throw Error('Invalid AI body.');
+  const parsed = parseMarkdown(result.markdown);
+  if (!result.markdown.trim()) throw Error('AI body missing.');
+  const urls: string[] = [];
+  function walk(nodes: DocNode[]) { for (const node of nodes) { if (node.href?.startsWith('https://')) urls.push(node.href); walk(node.children || []); } }
+  walk(parsed.body);
+  const literalURL = result.markdown.match(/https:\/\/[^\s<>"'`\])]+/)?.[0];
+  const resourceUrl = urls[0] || literalURL || '';
+  return validateContent({ ...blank(), title: result.title, subtitle: result.subtitle, excerpt: result.excerpt,
+    type: result.type, difficulty: result.difficulty, tags: normalizeAssistTags(result.tags, existingTags), body: parsed.body,
+    ...(result.type === 'resource' ? { resourceUrl, takeaway: result.excerpt.slice(0, 280), resourceKind: 'other' } : {}) });
 }

@@ -29,7 +29,7 @@ export function toCard(item: PublicItem | PublicRow): Card {
   const { row, content: c } = 'row' in item ? item : parseRows([item])[0];
   return {
     id: row.id, slug: row.slug, type: c.type ?? 'post', title: c.title, subtitle: c.subtitle,
-    cover: c.type === 'resource' ? undefined : c.cover, excerpt: plainText(c.body).replace(/\s+/g, ' ').trim().slice(0, 200), tags: c.tags,
+    cover: c.type === 'resource' ? undefined : c.cover, excerpt: c.excerpt || c.subtitle || plainText(c.body).replace(/\s+/g, ' ').trim().slice(0, 200), tags: c.tags,
     difficulty: c.difficulty ?? '', resourceUrl: c.resourceUrl, resourceKind: c.resourceKind,
     takeaway: c.takeaway, reviewedAt: c.reviewedAt, publishedAt: row.published_at,
     updatedAt: c.snapshotUpdatedAt ?? row.published_at, readingTime: readingTime(c), series: c.series, position: c.position,

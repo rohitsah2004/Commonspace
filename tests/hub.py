@@ -5,11 +5,11 @@ import urllib.parse
 
 def check_types(req, ok, anon, owner):
     template = {
-        'title': 'Hub validation fixture', 'subtitle': 'Disposable local fixture',
+        'title': 'Hub validation fixture', 'subtitle': 'Disposable local fixture', 'excerpt': 'A complete stored summary for the knowledge hub.',
         'cover': '', 'tags': ['Cloud Security', 'Testing'],
         'body': [{'tag': 'p', 'children': [{'text': 'A local security knowledge fixture.'}]}],
     }
-    for patch in [{'type': 'invalid'}, {'difficulty': None}, {'difficulty': 'expert'},
+    for patch in [{'excerpt': 123}, {'excerpt': 'x' * 501}, {'type': 'invalid'}, {'difficulty': None}, {'difficulty': 'expert'},
                   {'type': 'resource', 'resourceUrl': 'http://example.org'},
                   {'type': 'resource', 'resourceUrl': 'javascript:alert(1)'},
                   {'reviewedAt': 1}, {'type': 'resource', 'resourceUrl': 'https://example.org', 'resourceKind': 'invalid'}]:
@@ -27,6 +27,8 @@ def check_types(req, ok, anon, owner):
         fixtures.append((item, result['version']))
         code, html = req(anon, path + '?tag=cloud-security&difficulty=&sort=title')
         assert code == 200 and content['title'] in html
+        if kind != 'resource': assert template['excerpt'] in html
+        assert template['excerpt'] in req(anon, '/post/' + item['slug'])[1]
         assert req(anon, '/tags/cloud-security')[0] == 200
         if kind == 'resource':
             assert 'example.org' in html and 'Visit resource' in html
@@ -35,6 +37,7 @@ def check_types(req, ok, anon, owner):
     rows = ok(owner, '/api/posts?studio=1')['posts']
     old = next(p for p in rows if p['id'] == fixtures[0][0]['id'])
     assert old['draft']['type'] == 'post'
+    assert old['draft']['excerpt'] == template['excerpt'] and old['published']['excerpt'] == template['excerpt']
     private = ok(owner, '/api/posts', {**template, 'title': 'Private hub note must stay private', 'type': 'note'})
     assert 'Private hub note must stay private' not in req(anon, '/notes')[1]
     fixtures.append((private, private['version']))

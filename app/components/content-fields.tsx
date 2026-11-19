@@ -9,6 +9,7 @@ export default function ContentFields({ content, onChange }: { content: Content;
     <label>Content type<select value={type} onChange={e => onChange({ type: e.target.value as ContentType })}>
       {CONTENT_TYPES.map(t => <option key={t} value={t}>{TYPE_LABELS[t].singular}</option>)}
     </select></label>
+    <label>Excerpt<textarea rows={3} maxLength={500} value={content.excerpt ?? ''} onChange={e => onChange({ excerpt: e.target.value })}/><small>A complete summary for cards and feeds. Leave blank to use the body preview.</small></label>
     <label>Difficulty<select value={content.difficulty ?? ''} onChange={e => onChange({ difficulty: e.target.value as Difficulty | '' })}>
       <option value="">Not specified</option>
       {DIFFICULTIES.map(d => <option key={d} value={d}>{d[0].toUpperCase() + d.slice(1)}</option>)}

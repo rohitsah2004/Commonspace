@@ -4,7 +4,7 @@ import { siteUrl } from '../../lib/server';
 export function ArticleStructuredData({ item, author }: { item: PublicItem; author: string }) {
   const canonical = siteUrl() + '/post/' + item.row.slug;
   const value = { '@context': 'https://schema.org', '@type': item.content.type === 'resource' ? 'Article' : 'TechArticle',
-    headline: item.content.title, description: item.content.subtitle,
+    headline: item.content.title, description: item.content.excerpt || item.content.subtitle,
     datePublished: new Date(item.row.published_at).toISOString(), dateModified: new Date(snapshotModified(item)).toISOString(),
     author: { '@type': 'Person', name: author, url: siteUrl() + '/about' }, keywords: item.content.tags,
     mainEntityOfPage: { '@type': 'WebPage', '@id': canonical }, url: canonical };

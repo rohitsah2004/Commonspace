@@ -9,3 +9,10 @@ export async function claimAssistQuota(db: D1Database, ownerId: string, now = Da
   ]);
   return result[1].results.length === 1;
 }
+
+/** Refund the exact reservation's UTC day, even if the call crosses midnight. */
+export async function refundAssistQuota(db: D1Database, ownerId: string, reservedAt: number): Promise<void> {
+  const day = new Date(reservedAt).toISOString().slice(0, 10);
+  const key = await hash(ownerId + ':assist:' + day);
+  await db.batch([db.prepare('UPDATE rate_limits SET count=count-1 WHERE key=? AND count>0').bind(key)]);
+}
