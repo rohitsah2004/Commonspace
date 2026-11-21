@@ -112,3 +112,5 @@ await import('./clip.mjs');
 await import('./session-api.mjs');
 
 await import('./session-compile.mjs');
+
+await import('./book.mjs');

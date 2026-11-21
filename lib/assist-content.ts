@@ -6,15 +6,17 @@ import { CONTENT_TYPES, type ContentType } from './types';
 
 import { validateAssistResult } from './assist-result';
 import { normalizeAssistTags } from './assist-taxonomy';
+import { validateBookContext, isBookMode } from './book/input';
+import type { BookContext } from './book/types';
 import { ASSIST_INPUT_LIMIT } from './assist-limits';
 export { ASSIST_INPUT_LIMIT } from './assist-limits';
 export class AssistInputError extends Error {
   constructor(message: string, public status = 400) { super(message); }
 }
-export function validateAssistInput(input: unknown): { text: string; mode: AssistMode; hints: AssistHints; secretConsent: boolean } {
+export function validateAssistInput(input: unknown): { text: string; mode: AssistMode; hints: AssistHints; secretConsent: boolean; book?: BookContext } {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new AssistInputError('Provide text and a formatting mode.');
   const value = input as Record<string, unknown>;
-  if (Object.keys(value).some(key => !['text', 'mode', 'hints', 'secretConsent'].includes(key))) throw new AssistInputError('Invalid formatting request fields.');
+  if (Object.keys(value).some(key => !['text', 'mode', 'hints', 'secretConsent', ...(isBookMode(String(value.mode)) ? ['book'] : [])].includes(key))) throw new AssistInputError('Invalid formatting request fields.');
   if (typeof value.text !== 'string') throw new AssistInputError('Provide text to format.');
   if (value.text.length > ASSIST_INPUT_LIMIT) throw new AssistInputError('Use at most 20,000 characters.', 413);
   if (!value.text.trim()) throw new AssistInputError('Provide text to format.');
@@ -34,7 +36,9 @@ export function validateAssistInput(input: unknown): { text: string; mode: Assis
     }
   }
   if (value.secretConsent !== undefined && typeof value.secretConsent !== 'boolean') throw new AssistInputError('Invalid secret confirmation.');
-  return { text: value.text, mode: value.mode as AssistMode, hints, secretConsent: value.secretConsent === true };
+  const book = isBookMode(String(value.mode)) ? validateBookContext(value.book) : undefined;
+  if (book && value.text.length + JSON.stringify(book).length > ASSIST_INPUT_LIMIT) throw new AssistInputError('Chapter text and section checklist must fit within 20,000 characters.', 413);
+  return { ...(book ? { book } : {}), text: value.text, mode: value.mode as AssistMode, hints, secretConsent: value.secretConsent === true };
 }
 export async function readAssistInput(request: Request) {
   // JSON escapes can use six bytes per input character; bound the envelope too.

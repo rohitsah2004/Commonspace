@@ -39,8 +39,8 @@ async function boundedJSON(response: Response): Promise<unknown> {
   return JSON.parse(new TextDecoder().decode(bytes));
 }
 
-export async function callModel({ system, user, maxTokens, signal, metadataOnly = false }: {
-  system: string; user: string; maxTokens: number; signal: AbortSignal; metadataOnly?: boolean;
+export async function callModel({ system, user, maxTokens, signal, metadataOnly = false, responseSchema }: {
+  system: string; user: string; maxTokens: number; signal: AbortSignal; metadataOnly?: boolean; responseSchema?: Record<string, unknown>;
 }): Promise<{ markdown: string; usage: AIUsage }> {
   try {
     if (!assistReady(env)) throw failure();
@@ -55,7 +55,7 @@ export async function callModel({ system, user, maxTokens, signal, metadataOnly 
         body: JSON.stringify({ model: env.AI_MODEL, store: false,
           max_completion_tokens: Math.max(1, Math.min(AI_MAX_TOKENS, Math.floor(maxTokens))),
           messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
-          response_format: { type: 'json_schema', json_schema: { name: 'assist_result', strict: true, schema: metadataOnly ? ASSIST_METADATA_SCHEMA : ASSIST_RESULT_SCHEMA } } }),
+          response_format: { type: 'json_schema', json_schema: { name: 'assist_result', strict: true, schema: responseSchema || (metadataOnly ? ASSIST_METADATA_SCHEMA : ASSIST_RESULT_SCHEMA) } } }),
       });
       const transient = response.status === 429 || response.status >= 500;
       if (!response.ok) {

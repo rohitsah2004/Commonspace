@@ -1,5 +1,6 @@
+import { readFileSync } from 'node:fs';
 import vinext from "vinext";
-import { defineConfig } from "vite";
+import { defineConfig, type ViteDevServer } from "vite";
 import hostingConfig from "./.openai/hosting.json";
 import { readExecutionProfile } from "./scripts/execution-profile.mjs";
 import { configureToolEnvironment } from "./scripts/tool-environment.mjs";
@@ -53,6 +54,23 @@ export default defineConfig(async ({ command }) => {
         : {}),
     },
     plugins: [
+      {
+        name: 'book-pdf-worker-dev-asset',
+        configureServer(server: ViteDevServer) {
+          // Vite 8 rewrites PDF.js dynamic imports to /@vite/client, which uses
+          // window and crashes in a worker. Serve this exact dev asset verbatim;
+          // release builds still use Vite's bundled same-origin worker URL.
+          const worker = readFileSync(new URL('./node_modules/pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url));
+          server.middlewares.use((request, response, next) => {
+            const url = new URL(request.url || '/', 'http://localhost');
+            if (url.pathname !== '/node_modules/pdfjs-dist/build/pdf.worker.min.mjs'
+              || !url.searchParams.has('worker_file')) return next();
+            response.setHeader('Content-Type', 'text/javascript');
+            response.setHeader('Cache-Control', 'no-store');
+            response.end(worker);
+          });
+        },
+      },
       vinext(),
       sites({ mockAuth: !managedLinux }),
       connectorPreview(),

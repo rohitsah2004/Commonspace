@@ -11,6 +11,24 @@ export function validateMetadata(
     throw Error('Unknown difficulty.');
   }
   const metadata: ContentMetadata = { type: type as ContentMetadata['type'], difficulty: difficulty as ContentMetadata['difficulty'] };
+  for (const field of ['sourceTitle', 'sourceAuthor'] as const) {
+    if (input[field] !== undefined) {
+      if (typeof input[field] !== 'string' || input[field].length > 200) throw Error('Source text must be within 200 characters.');
+      metadata[field] = input[field].trim();
+    }
+  }
+  if (input.sourceUrl !== undefined) {
+    if (typeof input.sourceUrl !== 'string' || input.sourceUrl.length > 2048) throw Error('Invalid source URL.');
+    const url = safeURL(input.sourceUrl);
+    if (input.sourceUrl && (!url || new URL(url).protocol !== 'https:' || new URL(url).username || new URL(url).password)) throw Error('Use an HTTPS source URL without credentials.');
+    metadata.sourceUrl = url;
+  }
+  for (const field of ['longVerbatim', 'bookCodeWarning'] as const) {
+    if (input[field] !== undefined) {
+      if (typeof input[field] !== 'boolean') throw Error('Invalid draft notice.');
+      if (input[field]) metadata[field] = true;
+    }
+  }
   if (input.sessionReview !== undefined) {
     if (typeof input.sessionReview !== 'boolean') throw Error('Invalid session review marker.');
     if (input.sessionReview) metadata.sessionReview = true;

@@ -40,7 +40,7 @@ export function nodesToMarkdown(nodes: DocNode[]): string {
 }
 
 export function contentToMarkdown(content: Content): string {
-  const fields = { title: content.title, subtitle: content.subtitle, ...(content.excerpt !== undefined ? { excerpt: content.excerpt } : {}), tags: content.tags, type: content.type || 'post',
+  const fields = { ...Object.fromEntries(['sourceTitle','sourceAuthor','sourceUrl'].filter(key => content[key as keyof Content] !== undefined).map(key => [key,content[key as keyof Content]])), title: content.title, subtitle: content.subtitle, ...(content.excerpt !== undefined ? { excerpt: content.excerpt } : {}), tags: content.tags, type: content.type || 'post',
     difficulty: content.difficulty || '', series: content.series || '', position: content.position || 0,
     ...(content.type === 'resource' ? { resourceUrl: content.resourceUrl, resourceKind: content.resourceKind, takeaway: content.takeaway } : {}),
     ...(content.reviewedAt ? { reviewedAt: content.reviewedAt } : {}) };

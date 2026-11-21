@@ -13,6 +13,11 @@ export type ResourceKind = typeof RESOURCE_KINDS[number];
 export type ContentMetadata = {
   excerpt?: string;
   sessionReview?: boolean;
+  sourceTitle?: string;
+  sourceAuthor?: string;
+  sourceUrl?: string;
+  longVerbatim?: boolean;
+  bookCodeWarning?: boolean;
   type?: ContentType;
   difficulty?: Difficulty | '';
   reviewedAt?: number;

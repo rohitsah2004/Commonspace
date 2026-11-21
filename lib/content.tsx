@@ -4,6 +4,7 @@ import {CODE_LANGUAGES} from './highlight';import {DocumentBody} from '../app/co
 import type { ContentMetadata } from './types';import { validateMetadata } from './content-metadata';
 import React from 'react';
 export type DocNode={tag?:string;text?:string,href?:string,src?:string,alt?:string,language?:string,children?:DocNode[]};
+// ContentMetadata includes optional, strictly validated sourceTitle/sourceAuthor/sourceUrl.
 export type Content=ContentMetadata & {title:string,subtitle:string,cover:string,tags:string[],body:DocNode[],series?:string,position?:number,attachments?:{id:string,name:string,url:string,size:number,type:string}[]};
 const tags=DOCUMENT_TAGS;
 export const blank=():Content=>({title:'',subtitle:'',cover:'',tags:[],body:[],type:'post',difficulty:''});

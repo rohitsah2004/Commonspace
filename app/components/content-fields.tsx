@@ -1,11 +1,12 @@
 'use client';
 
+import { BookSourceFields } from './book-source';
 import type { Content } from '../../lib/content';
 import { CONTENT_TYPES, DIFFICULTIES, RESOURCE_KINDS, TYPE_LABELS, type ContentType, type Difficulty, type ResourceKind } from '../../lib/types';
 
 export default function ContentFields({ content, onChange }: { content: Content; onChange: (patch: Partial<Content>) => void }) {
   const type = content.type ?? 'post';
-  return <section className="contentfields">
+  return <section className="contentfields"><BookSourceFields content={content} onChange={onChange}/>
     <label>Content type<select value={type} onChange={e => onChange({ type: e.target.value as ContentType })}>
       {CONTENT_TYPES.map(t => <option key={t} value={t}>{TYPE_LABELS[t].singular}</option>)}
     </select></label>

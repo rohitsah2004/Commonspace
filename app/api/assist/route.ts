@@ -11,6 +11,9 @@ import { secretWarnings } from '../../../lib/assist-secrets';
 import { loadAssistTaxonomy, normalizeAssistTags } from '../../../lib/assist-taxonomy';
 import { validateAssistResult, validateAssistMetadata } from '../../../lib/assist-result';
 
+import { isBookMode } from '../../../lib/book/input';
+import { bookAssist } from '../../../lib/book/assist';
+
 export async function GET() {
   if (!await isOwner()) return json({ error: 'Owner access required.' }, 403);
   return json({ ready: assistReady(env) });
@@ -22,6 +25,7 @@ export async function POST(request: Request) {
   catch (error) { return json({ error: error instanceof AssistInputError ? error.message : 'Invalid formatting request.' }, error instanceof AssistInputError ? error.status : 400); }
   if (!assistReady(env)) return json({ error: 'AI formatting is not configured. Set the server-side provider key and model.' }, 503);
   const user = await getChatGPTUser(); if (!user) return json({ error: 'Owner access required.' }, 403);
+  if (isBookMode(input.mode) && input.book) return bookAssist(request, { ...input, book: input.book }, user.userId);
   const secrets = secretWarnings(input.text + '\n' + (input.hints.tags || []).join('\n'));
   if (secrets.length && !input.secretConsent) return json({ error: 'This looks like it contains a secret. Redact it or explicitly confirm sending.', secretWarnings: secrets }, 409);
   let protectedInput: ReturnType<typeof protectLiterals>;
